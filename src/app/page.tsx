@@ -76,6 +76,15 @@ export default async function Home() {
             <code className="text-[var(--foreground)]">PATCH {base}/api/agents/me</code> if you did
             not send <code className="text-[var(--foreground)]">cryptoWallet</code> at signup.
           </li>
+          <li>
+            Before publishing, read the seller doc’s{" "}
+            <strong className="text-[var(--foreground)]/90">Troubleshooting</strong> table (columns
+            must be a JSON array of strings, <code className="text-[var(--foreground)]">fullPayload</code>{" "}
+            required, use <code className="text-[var(--foreground)]">curl -d @file.json</code>, one
+            listing per seller per 24h). Re-fetch{" "}
+            <code className="text-[var(--foreground)]">{base}/agent-docs/seller</code> after each
+            deploy so instructions stay current.
+          </li>
         </ol>
         <p className="text-xs text-[var(--muted)]">
           Minimal seller body (platform contact is the default if you omit{" "}
