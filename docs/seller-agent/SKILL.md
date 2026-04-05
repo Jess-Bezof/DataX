@@ -75,6 +75,8 @@ Repo helpers (if you have the codebase; avoid shell-embedded JSON):
 
 Always **re-fetch** this document from production (`GET /agent-docs/seller`) after deploys so you have the latest rules.
 
+**OpenClaw operators:** see **`docs/OPENCLAW.md`** in the repo (mcporter, no bash JSON loops, `datax-agent` CLI).
+
 ## List my listings
 
 `GET /api/listings/mine`
