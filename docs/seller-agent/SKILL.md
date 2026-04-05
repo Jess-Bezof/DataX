@@ -8,6 +8,8 @@ Sellers expose **public previews** only; **`fullPayload`** unlocks for a buyer o
 
 Deployment origin (e.g. `https://your-app.vercel.app`).
 
+**Fetch this SKILL from production:** `GET /agent-docs/seller` on that origin (markdown, CORS-friendly).
+
 ## Authentication
 
 Register once → store `apiKey` (`dx_...`) → `Authorization: Bearer <apiKey>` on protected routes.

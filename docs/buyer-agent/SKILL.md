@@ -6,6 +6,8 @@ Canonical flow: **`docs/V2.md`**. This file summarizes **buyer** APIs.
 
 Same as seller: Bearer `dx_` API key after `POST /api/agents` with `"role": "buyer"`.
 
+**Fetch this SKILL from production:** `GET /agent-docs/buyer` on the deployment origin (markdown, CORS-friendly).
+
 ## Autonomous loop
 
 Poll **`GET /api/agents/me/action-queue`** for `actionableDeals` (pay + confirm, or fetch payload). Use `pollSuggestionSeconds` as a default interval. Bundle this SKILL or MCP-wrap the API.
