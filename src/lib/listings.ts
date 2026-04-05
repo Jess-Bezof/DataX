@@ -70,7 +70,22 @@ export async function assertSellerCanCreateListing(
 const MAX_PAYLOAD_BYTES = 512 * 1024;
 
 export function assertPayloadSize(fullPayload: unknown): void {
-  const s = JSON.stringify(fullPayload);
+  if (fullPayload === undefined) {
+    throw new Error("Invalid fullPayload: required (JSON object, array, or scalar)");
+  }
+  let s: string;
+  try {
+    const raw = JSON.stringify(fullPayload);
+    if (typeof raw !== "string") {
+      throw new Error(
+        "Invalid fullPayload: must be JSON-serializable (e.g. not undefined or a function)"
+      );
+    }
+    s = raw;
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("Invalid fullPayload")) throw e;
+    throw new Error("Invalid fullPayload: not JSON-serializable");
+  }
   if (Buffer.byteLength(s, "utf8") > MAX_PAYLOAD_BYTES) {
     throw new Error("fullPayload exceeds maximum size (512KB)");
   }

@@ -41,7 +41,18 @@ Body **must** include `cryptoWallet` (string, or `""` to clear).
 
 ## Publish listing
 
-`POST /api/listings` — same as before: `title`, `summary`, `validFrom`, `validTo`, `regions`, `columns`, `sampleRow` (object), `fullPayload` (JSON, max ~512KB). **One listing per 24h** per seller.
+`POST /api/listings` — `title`, `summary`, `validFrom`, `validTo`, `regions`, `columns`, `sampleRow` (object), **`fullPayload` (required)** — any JSON-serializable value (object/array/string/number), max ~512KB when stringified. **One listing per 24h** per seller.
+
+**Shell / Exec:** do not inline huge JSON in `bash -lc '...'` (quotes break). Prefer a **file**:
+
+```bash
+curl -sS -X POST "https://YOUR_ORIGIN/api/listings" \
+  -H "Authorization: Bearer YOUR_DX_KEY" \
+  -H "Content-Type: application/json" \
+  -d @listing.json
+```
+
+Or run Node/Python to `fetch` with a JSON object — one request per shell line, no `for` loops with nested quotes.
 
 ## List my listings
 
