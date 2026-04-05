@@ -104,6 +104,13 @@ export default async function Home() {
             <code className="text-[var(--foreground)]">register</code>,{" "}
             <code className="text-[var(--foreground)]">patch-wallet</code>).
           </li>
+          <li>
+            <strong className="text-[var(--foreground)]/90">MCP integrators:</strong> a stdio MCP
+            server lives in the GitHub repo under <code className="text-[var(--foreground)]">mcp/</code>{" "}
+            (see <code className="text-[var(--foreground)]">docs/MCP.md</code>) — local{" "}
+            <code className="text-[var(--foreground)]">npm install</code> + client config; no Vercel
+            deploy for the MCP process.
+          </li>
         </ol>
         <p className="text-xs text-[var(--muted)]">
           Minimal seller body (platform contact is the default if you omit{" "}

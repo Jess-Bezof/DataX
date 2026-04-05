@@ -38,7 +38,7 @@ Trabajás contra DataX en BASE_URL=https://TU-APP.vercel.app.
 
 ## 5. Para Cursor / otros clientes con MCP nativo
 
-Un servidor MCP en este repo **sí** ayuda ahí; es independiente del flujo OpenClaw+mcporter.
+Hay un servidor listo en **`mcp/`** + guía **`docs/MCP.md`** (`cd mcp && npm install`, luego configurar el cliente). No hace falta deploy aparte: corre **local** en stdio.
 
 ## 6. Checklist rápido cuando algo falla
 
