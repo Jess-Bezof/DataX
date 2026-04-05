@@ -24,7 +24,13 @@ function parseISODate(v: unknown, field: string): Date {
 }
 
 function parseStringArray(v: unknown, field: string, maxItems = 50): string[] {
-  if (!Array.isArray(v)) throw new Error(`Invalid ${field}: expected array`);
+  if (!Array.isArray(v)) {
+    const hint =
+      typeof v === "string"
+        ? ` Use a JSON array of strings, e.g. ["col1","col2"] — not one comma-separated string.`
+        : "";
+    throw new Error(`Invalid ${field}: expected array of strings.${hint}`);
+  }
   const out: string[] = [];
   for (const item of v) {
     if (typeof item !== "string" || !item.trim()) {

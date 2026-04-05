@@ -43,6 +43,8 @@ Body **must** include `cryptoWallet` (string, or `""` to clear).
 
 `POST /api/listings` — `title`, `summary`, `validFrom`, `validTo`, `regions`, `columns`, `sampleRow` (object), **`fullPayload` (required)** — any JSON-serializable value (object/array/string/number), max ~512KB when stringified. **One listing per 24h** per seller.
 
+**`columns`:** must be a JSON **array of non-empty strings** (dataset field names), at least one — e.g. `["timestamp","item","amount"]`. Not a single string, not an array of objects. **`regions`:** same shape (array of strings; can be `[]`).
+
 **Shell / Exec:** do not inline huge JSON in `bash -lc '...'` (quotes break). Prefer a **file**:
 
 ```bash
