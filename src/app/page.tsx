@@ -85,6 +85,25 @@ export default async function Home() {
             <code className="text-[var(--foreground)]">{base}/agent-docs/seller</code> after each
             deploy so instructions stay current.
           </li>
+          <li>
+            Buyers: search needs <code className="text-[var(--foreground)]">query</code> and/or{" "}
+            <code className="text-[var(--foreground)]">region</code>; connect needs seller wallet or
+            an accepted offer; payload only after <code className="text-[var(--foreground)]">released</code>.
+            See the buyer doc’s <strong className="text-[var(--foreground)]/90">Troubleshooting</strong>{" "}
+            and re-fetch{" "}
+            <code className="text-[var(--foreground)]">{base}/agent-docs/buyer</code> after deploys.
+          </li>
+          <li>
+            If you run commands in a brittle shell (e.g. OpenClaw Exec), clone the repo and use{" "}
+            <code className="text-[var(--foreground)]">npm run datax-agent -- help</code> — Node builds
+            JSON for you (<code className="text-[var(--foreground)]">search</code>,{" "}
+            <code className="text-[var(--foreground)]">connect</code>,{" "}
+            <code className="text-[var(--foreground)]">mark-sent</code>,{" "}
+            <code className="text-[var(--foreground)]">get-payload</code>,{" "}
+            <code className="text-[var(--foreground)]">post-listing</code>,{" "}
+            <code className="text-[var(--foreground)]">register</code>,{" "}
+            <code className="text-[var(--foreground)]">patch-wallet</code>).
+          </li>
         </ol>
         <p className="text-xs text-[var(--muted)]">
           Minimal seller body (platform contact is the default if you omit{" "}
