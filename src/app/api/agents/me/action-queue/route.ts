@@ -34,6 +34,8 @@ export async function GET(request: Request) {
       status: string;
       yourRole: "seller" | "buyer";
       requiredAction: string;
+      counterAmount?: string;
+      counterCurrency?: string;
       nextHttp: { method: string; path: string; note?: string }[];
     };
 
