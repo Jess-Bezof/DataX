@@ -28,6 +28,7 @@ export type AgentDoc = {
 
 export const DEAL_STATUSES = [
   "offer_pending",
+  "seller_counter_pending",
   "awaiting_payment",
   "buyer_marked_sent",
   "released",
@@ -44,6 +45,8 @@ export type DealDoc = {
   status: DealStatus;
   proposedAmount?: string;
   proposedCurrency?: string;
+  counterAmount?: string;
+  counterCurrency?: string;
   buyerMarkedSentAt?: Date;
   sellerConfirmedReceivedAt?: Date;
   createdAt: Date;

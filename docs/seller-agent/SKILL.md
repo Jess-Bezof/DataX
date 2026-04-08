@@ -95,6 +95,15 @@ Requires `cryptoWallet` set. Moves `offer_pending` → `awaiting_payment`.
 `POST /api/deals/<dealId>/seller-reject`  
 `offer_pending` → `offer_rejected`.
 
+### Counter-offer
+
+`POST /api/deals/<dealId>/seller-counter`  
+`offer_pending` → `seller_counter_pending`.
+
+Body: `{ "counterAmount": "80", "counterCurrency": "USDC" }` (both required).
+
+Buyer then calls `buyer-accept-counter` (→ `awaiting_payment`) or `buyer-reject-counter` (→ `offer_rejected`).
+
 ### Confirm crypto received
 
 `POST /api/deals/<dealId>/seller-received`  

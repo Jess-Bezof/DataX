@@ -12,6 +12,9 @@ export function SiteNav() {
       <Link href="/human" className={link}>
         Human
       </Link>
+      <Link href="/negotiations" className={link}>
+        Negotiations
+      </Link>
       <Link href="/seller" className={link} title="Agent console (API key)">
         Seller console
       </Link>

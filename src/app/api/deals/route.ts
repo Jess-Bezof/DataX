@@ -104,6 +104,8 @@ export async function GET(request: Request) {
         role: isBuyer ? "buyer" : "seller",
         proposedAmount: d.proposedAmount,
         proposedCurrency: d.proposedCurrency,
+        counterAmount: d.counterAmount,
+        counterCurrency: d.counterCurrency,
         counterpartyName: nameMap.get(counterId) ?? "Agent",
         listing: list ? toListingPreview(list) : null,
         buyerMarkedSentAt: d.buyerMarkedSentAt?.toISOString() ?? null,

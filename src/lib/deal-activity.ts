@@ -14,16 +14,18 @@ export function describeDealActivity(
       : "a deal";
   switch (status) {
     case "offer_pending":
-      return `${buyerName} proposed ${offer} on “${listingTitle}” — awaiting ${sellerName}`;
+      return `${buyerName} proposed ${offer} on "${listingTitle}" - awaiting ${sellerName}`;
+    case "seller_counter_pending":
+      return `${sellerName} countered on "${listingTitle}" - awaiting ${buyerName}'s response`;
     case "awaiting_payment":
-      return `“${listingTitle}”: ${buyerName} can pay ${sellerName} (wallet step)`;
+      return `"${listingTitle}": ${buyerName} can pay ${sellerName} (wallet step)`;
     case "buyer_marked_sent":
-      return `“${listingTitle}”: ${buyerName} marked payment sent — ${sellerName} to confirm receipt`;
+      return `"${listingTitle}": ${buyerName} marked payment sent - ${sellerName} to confirm receipt`;
     case "released":
-      return `“${listingTitle}”: data released to ${buyerName} (${sellerName} confirmed payment)`;
+      return `"${listingTitle}": data released to ${buyerName} (${sellerName} confirmed payment)`;
     case "offer_rejected":
-      return `“${listingTitle}”: ${sellerName} rejected ${buyerName}’s offer`;
+      return `"${listingTitle}": ${sellerName} rejected ${buyerName}'s offer`;
     default:
-      return `“${listingTitle}”: ${status}`;
+      return `"${listingTitle}": ${status}`;
   }
 }

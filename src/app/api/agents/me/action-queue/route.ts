@@ -57,7 +57,7 @@ export async function GET(request: Request) {
             listingTitle: listing?.title ?? "(listing)",
             status: d.status,
             yourRole: "seller",
-            requiredAction: "accept_or_reject_buyers_price_proposal",
+            requiredAction: "accept_reject_or_counter_buyers_price_proposal",
             nextHttp: [
               {
                 method: "POST",
@@ -65,6 +65,11 @@ export async function GET(request: Request) {
                 note: "Requires cryptoWallet set first.",
               },
               { method: "POST", path: `/api/deals/${id}/seller-reject` },
+              {
+                method: "POST",
+                path: `/api/deals/${id}/seller-counter`,
+                note: "Body: { counterAmount, counterCurrency }",
+              },
             ],
           });
         } else {
@@ -88,7 +93,7 @@ export async function GET(request: Request) {
       const awaitingPay = await dealsCol
         .find({
           buyerAgentId: agent._id,
-          status: "awaiting_payment",
+          status: { $in: ["awaiting_payment", "seller_counter_pending"] },
         })
         .sort({ updatedAt: 1 })
         .toArray();
@@ -104,7 +109,25 @@ export async function GET(request: Request) {
       for (const d of buyerDeals) {
         const listing = await listingsCol.findOne({ _id: d.listingId });
         const id = d._id.toHexString();
-        if (d.status === "awaiting_payment") {
+        if (d.status === "seller_counter_pending") {
+          actionable.push({
+            dealId: id,
+            listingTitle: listing?.title ?? "(listing)",
+            status: d.status,
+            yourRole: "buyer",
+            requiredAction: "accept_or_reject_sellers_counter_offer",
+            counterAmount: (d as { counterAmount?: string }).counterAmount,
+            counterCurrency: (d as { counterCurrency?: string }).counterCurrency,
+            nextHttp: [
+              {
+                method: "POST",
+                path: `/api/deals/${id}/buyer-accept-counter`,
+                note: "Accepts seller counter; returns sellerCryptoWallet.",
+              },
+              { method: "POST", path: `/api/deals/${id}/buyer-reject-counter` },
+            ],
+          });
+        } else if (d.status === "awaiting_payment") {
           actionable.push({
             dealId: id,
             listingTitle: listing?.title ?? "(listing)",
