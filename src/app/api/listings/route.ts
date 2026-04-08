@@ -64,9 +64,14 @@ export async function GET(req: Request) {
       .sort({ createdAt: -1 })
       .limit(limit);
     const docs = await cursor.toArray();
-    return Response.json({
-      listings: docs.map(toListingPreview),
+    const listings = docs.flatMap((doc) => {
+      try {
+        return [toListingPreview(doc)];
+      } catch {
+        return [];
+      }
     });
+    return Response.json({ listings });
   } catch (e) {
     if (e instanceof Error && e.message.includes("MONGODB_URI")) {
       return jsonError(503, "Database is not configured");
@@ -87,7 +92,12 @@ export async function POST(req: Request) {
     if (!agent) throw new AuthError(401, "Missing or invalid API key");
     assertRole(agent, "seller");
 
-    const body = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return jsonError(400, "Request body must be valid JSON");
+    }
     const title = nonEmptyString(body.title, "title", 200);
     const summary = nonEmptyString(body.summary, "summary", 4000);
     const validFrom = parseISODate(body.validFrom, "validFrom");

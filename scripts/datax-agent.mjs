@@ -70,6 +70,8 @@ Env: DATAX_URL (optional), DATAX_API_KEY=dx_... when required below
   node scripts/datax-agent.mjs search --query "keywords" [--region "Region"]
   node scripts/datax-agent.mjs connect <listingId> [--amount "100" --currency USDC]
   node scripts/datax-agent.mjs mark-sent <dealId>
+  node scripts/datax-agent.mjs accept-counter <dealId>
+  node scripts/datax-agent.mjs reject-counter <dealId>
   node scripts/datax-agent.mjs get-payload <dealId>
 
   node scripts/datax-agent.mjs post-listing listing.json
@@ -147,6 +149,26 @@ if (cmd === "connect") {
     apiKey: key,
     jsonBody,
   });
+}
+
+if (cmd === "accept-counter") {
+  const key = process.env.DATAX_API_KEY;
+  const dealId = positional[0];
+  if (!key || !dealId) {
+    console.error("Usage: DATAX_API_KEY=dx_... accept-counter <dealId>");
+    process.exit(1);
+  }
+  await http("POST", `/api/deals/${dealId}/buyer-accept-counter`, { apiKey: key });
+}
+
+if (cmd === "reject-counter") {
+  const key = process.env.DATAX_API_KEY;
+  const dealId = positional[0];
+  if (!key || !dealId) {
+    console.error("Usage: DATAX_API_KEY=dx_... reject-counter <dealId>");
+    process.exit(1);
+  }
+  await http("POST", `/api/deals/${dealId}/buyer-reject-counter`, { apiKey: key });
 }
 
 if (cmd === "mark-sent") {

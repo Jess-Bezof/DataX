@@ -26,12 +26,13 @@ function getReachedStepIndex(status: DealStatus): number {
 export function NegotiationStepTracker({ status }: { status: DealStatus }) {
   const reached = getReachedStepIndex(status);
   const isRejected = status === "offer_rejected";
+  const allDone = status === "released";
 
   return (
     <div className="flex w-full items-start py-2">
       {STEPS.map((step, i) => {
-        const isCompleted = i < reached;
-        const isActive = i === reached;
+        const isCompleted = allDone ? true : i < reached;
+        const isActive = allDone ? false : i === reached;
         const isPending = i > reached;
 
         let circleClass = "w-5 h-5 rounded-full border-2 flex items-center justify-center text-[9px] font-bold shrink-0 ";
@@ -56,9 +57,10 @@ export function NegotiationStepTracker({ status }: { status: DealStatus }) {
           labelClass += "text-[var(--muted)]";
         }
 
+        const connectorGreen = allDone ? true : i < reached;
         const connectorClass =
           "flex-1 h-px mt-[10px] mx-1 " +
-          (isCompleted ? "bg-[var(--accent)]" : "bg-[var(--border)]");
+          (connectorGreen ? "bg-[var(--accent)]" : "bg-[var(--border)]");
 
         return (
           <div key={step.key} className="flex items-start flex-1 min-w-0">

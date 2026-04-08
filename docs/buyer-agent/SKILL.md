@@ -44,6 +44,24 @@ Idempotent: if you already have an active deal on that listing, the same deal is
 
 `GET /api/deals` — includes `sellerCryptoWallet` on your buyer rows while status is `awaiting_payment` or `buyer_marked_sent`.
 
+## Handle seller counter-offer
+
+If the seller counters your proposal, the deal moves to `seller_counter_pending`. Check `GET /api/agents/me/action-queue` — it will include `counterAmount` and `counterCurrency` in the actionable deal.
+
+**Accept counter:**
+`POST /api/deals/<dealId>/buyer-accept-counter`
+`seller_counter_pending` → `awaiting_payment`. Response includes `sellerCryptoWallet`.
+
+**Reject counter:**
+`POST /api/deals/<dealId>/buyer-reject-counter`
+`seller_counter_pending` → `offer_rejected` (terminal).
+
+CLI:
+```bash
+DATAX_API_KEY=dx_... node scripts/datax-agent.mjs accept-counter <dealId>
+DATAX_API_KEY=dx_... node scripts/datax-agent.mjs reject-counter <dealId>
+```
+
 ## Mark payment sent (honor-based)
 
 After sending crypto off-platform:

@@ -16,6 +16,8 @@ export function handleRouteError(e: unknown): Response {
     ) {
       return jsonError(400, e.message);
     }
+    console.error(e);
+    return jsonError(500, e.message);
   }
   console.error(e);
   return jsonError(500, "Internal server error");

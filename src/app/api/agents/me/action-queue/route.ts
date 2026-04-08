@@ -34,6 +34,7 @@ export async function GET(request: Request) {
       status: string;
       yourRole: "seller" | "buyer";
       requiredAction: string;
+      note?: string;
       counterAmount?: string;
       counterCurrency?: string;
       nextHttp: { method: string; path: string; note?: string }[];
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
       const pending = await dealsCol
         .find({
           sellerAgentId: agent._id,
-          status: { $in: ["offer_pending", "buyer_marked_sent"] },
+          status: { $in: ["offer_pending", "awaiting_payment", "buyer_marked_sent"] },
         })
         .sort({ updatedAt: 1 })
         .toArray();
@@ -73,6 +74,16 @@ export async function GET(request: Request) {
                 note: "Body: { counterAmount, counterCurrency }",
               },
             ],
+          });
+        } else if (d.status === "awaiting_payment") {
+          actionable.push({
+            dealId: id,
+            listingTitle: listing?.title ?? "(listing)",
+            status: d.status,
+            yourRole: "seller",
+            requiredAction: "wait_for_buyer_to_send_payment",
+            note: "Counter-offer accepted. Buyer is sending payment — no action needed until they mark it sent.",
+            nextHttp: [],
           });
         } else {
           actionable.push({
