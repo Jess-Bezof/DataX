@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       const pending = await dealsCol
         .find({
           sellerAgentId: agent._id,
-          status: { $in: ["offer_pending", "awaiting_payment", "buyer_marked_sent"] },
+          status: { $in: ["offer_pending", "buyer_counter_pending", "awaiting_payment", "buyer_marked_sent"] },
         })
         .sort({ updatedAt: 1 })
         .toArray();
@@ -75,6 +75,30 @@ export async function GET(request: Request) {
               },
             ],
           });
+        } else if (d.status === "buyer_counter_pending") {
+          actionable.push({
+            dealId: id,
+            listingTitle: listing?.title ?? "(listing)",
+            status: d.status,
+            yourRole: "seller",
+            requiredAction: "accept_reject_or_counter_buyers_counter_offer",
+            counterAmount: (d as { counterAmount?: string }).counterAmount,
+            counterCurrency: (d as { counterCurrency?: string }).counterCurrency,
+            note: "Buyer countered. You can accept, reject, or counter again.",
+            nextHttp: [
+              {
+                method: "POST",
+                path: `/api/deals/${id}/seller-accept`,
+                note: "Accepts buyer counter; returns sellerCryptoWallet.",
+              },
+              { method: "POST", path: `/api/deals/${id}/seller-reject` },
+              {
+                method: "POST",
+                path: `/api/deals/${id}/seller-counter`,
+                note: "Body: { counterAmount, counterCurrency }",
+              },
+            ],
+          });
         } else if (d.status === "awaiting_payment") {
           actionable.push({
             dealId: id,
@@ -82,7 +106,7 @@ export async function GET(request: Request) {
             status: d.status,
             yourRole: "seller",
             requiredAction: "wait_for_buyer_to_send_payment",
-            note: "Counter-offer accepted. Buyer is sending payment — no action needed until they mark it sent.",
+            note: "Offer accepted. Buyer is sending payment — no action needed until they mark it sent.",
             nextHttp: [],
           });
         } else {
@@ -106,7 +130,7 @@ export async function GET(request: Request) {
       const awaitingPay = await dealsCol
         .find({
           buyerAgentId: agent._id,
-          status: { $in: ["awaiting_payment", "seller_counter_pending"] },
+          status: { $in: ["awaiting_payment", "seller_counter_pending", "buyer_counter_pending"] },
         })
         .sort({ updatedAt: 1 })
         .toArray();
@@ -128,7 +152,7 @@ export async function GET(request: Request) {
             listingTitle: listing?.title ?? "(listing)",
             status: d.status,
             yourRole: "buyer",
-            requiredAction: "accept_or_reject_sellers_counter_offer",
+            requiredAction: "accept_reject_or_counter_sellers_counter_offer",
             counterAmount: (d as { counterAmount?: string }).counterAmount,
             counterCurrency: (d as { counterCurrency?: string }).counterCurrency,
             nextHttp: [
@@ -138,7 +162,24 @@ export async function GET(request: Request) {
                 note: "Accepts seller counter; returns sellerCryptoWallet.",
               },
               { method: "POST", path: `/api/deals/${id}/buyer-reject-counter` },
+              {
+                method: "POST",
+                path: `/api/deals/${id}/buyer-counter`,
+                note: "Body: { counterAmount, counterCurrency }. Send your own counter-offer back.",
+              },
             ],
+          });
+        } else if (d.status === "buyer_counter_pending") {
+          actionable.push({
+            dealId: id,
+            listingTitle: listing?.title ?? "(listing)",
+            status: d.status,
+            yourRole: "buyer",
+            requiredAction: "wait_for_seller_to_respond_to_your_counter",
+            counterAmount: (d as { counterAmount?: string }).counterAmount,
+            counterCurrency: (d as { counterCurrency?: string }).counterCurrency,
+            note: "Your counter-offer is pending — waiting for seller to accept, reject, or counter again.",
+            nextHttp: [],
           });
         } else if (d.status === "awaiting_payment") {
           actionable.push({

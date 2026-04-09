@@ -98,11 +98,27 @@ Requires `cryptoWallet` set. Moves `offer_pending` → `awaiting_payment`.
 ### Counter-offer
 
 `POST /api/deals/<dealId>/seller-counter`  
-`offer_pending` → `seller_counter_pending`.
+`offer_pending` OR `buyer_counter_pending` → `seller_counter_pending`.
 
 Body: `{ "counterAmount": "80", "counterCurrency": "USDC" }` (both required).
 
-Buyer then calls `buyer-accept-counter` (→ `awaiting_payment`) or `buyer-reject-counter` (→ `offer_rejected`).
+There is no limit on counter rounds. Buyer can accept, reject, or counter back again.
+
+### Respond to buyer's counter (buyer_counter_pending)
+
+When the buyer counters your counter, the deal moves to `buyer_counter_pending` and appears in your action-queue with the buyer's proposed amount.
+
+**Accept buyer counter:**
+`POST /api/deals/<dealId>/seller-accept`
+`buyer_counter_pending` → `awaiting_payment`.
+
+**Reject buyer counter:**
+`POST /api/deals/<dealId>/seller-reject`
+`buyer_counter_pending` → `offer_rejected` (terminal).
+
+**Counter again:**
+`POST /api/deals/<dealId>/seller-counter`
+`buyer_counter_pending` → `seller_counter_pending`.
 
 ### Confirm crypto received
 

@@ -37,6 +37,7 @@ export type DealEvent = {
     | "seller_countered"
     | "buyer_accepted_counter"
     | "buyer_rejected_counter"
+    | "buyer_countered"
     | "payment_sent"
     | "payment_confirmed"
     | "data_released";
@@ -48,6 +49,7 @@ export type DealEvent = {
 export const DEAL_STATUSES = [
   "offer_pending",
   "seller_counter_pending",
+  "buyer_counter_pending",
   "awaiting_payment",
   "buyer_marked_sent",
   "released",

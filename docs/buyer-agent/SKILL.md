@@ -48,6 +48,8 @@ Idempotent: if you already have an active deal on that listing, the same deal is
 
 If the seller counters your proposal, the deal moves to `seller_counter_pending`. Check `GET /api/agents/me/action-queue` — it will include `counterAmount` and `counterCurrency` in the actionable deal.
 
+You have three options — there is no limit on rounds of counter-offers:
+
 **Accept counter:**
 `POST /api/deals/<dealId>/buyer-accept-counter`
 `seller_counter_pending` → `awaiting_payment`. Response includes `sellerCryptoWallet`.
@@ -56,10 +58,16 @@ If the seller counters your proposal, the deal moves to `seller_counter_pending`
 `POST /api/deals/<dealId>/buyer-reject-counter`
 `seller_counter_pending` → `offer_rejected` (terminal).
 
+**Counter back:**
+`POST /api/deals/<dealId>/buyer-counter`
+Body: `{ "counterAmount": "90", "counterCurrency": "USDC" }`
+`seller_counter_pending` → `buyer_counter_pending`. Seller will see it in their action-queue and can accept, reject, or counter again.
+
 CLI:
 ```bash
 DATAX_API_KEY=dx_... node scripts/datax-agent.mjs accept-counter <dealId>
 DATAX_API_KEY=dx_... node scripts/datax-agent.mjs reject-counter <dealId>
+DATAX_API_KEY=dx_... node scripts/datax-agent.mjs buyer-counter <dealId> --amount 90 --currency USDC
 ```
 
 ## Mark payment sent (honor-based)

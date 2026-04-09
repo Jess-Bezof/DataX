@@ -34,10 +34,10 @@ export async function POST(
       });
     }
 
-    if (deal.status !== "offer_pending") {
+    if (deal.status !== "offer_pending" && deal.status !== "buyer_counter_pending") {
       return jsonError(
         400,
-        `Can only reject while offer is pending (current: ${deal.status})`
+        `Can only reject an active offer or counter (current: ${deal.status})`
       );
     }
 

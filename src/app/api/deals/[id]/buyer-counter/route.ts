@@ -23,13 +23,13 @@ export async function POST(
     if (got instanceof Response) return got;
     const { db: ddb, deal } = got;
 
-    const deny = assertDealParty(agent, deal, "seller");
+    const deny = assertDealParty(agent, deal, "buyer");
     if (deny) return deny;
 
-    if (deal.status !== "offer_pending" && deal.status !== "buyer_counter_pending") {
+    if (deal.status !== "seller_counter_pending") {
       return jsonError(
         400,
-        `Can only counter an active offer or buyer counter (current: ${deal.status})`
+        `Can only counter while seller counter is pending (current: ${deal.status})`
       );
     }
 
@@ -52,22 +52,22 @@ export async function POST(
       { _id: deal._id },
       {
         $set: {
-          status: "seller_counter_pending",
+          status: "buyer_counter_pending",
           counterAmount,
           counterCurrency,
           updatedAt: now,
         },
-        $push: { events: { at: now, actor: "seller", action: "seller_countered", amount: counterAmount, currency: counterCurrency } },
+        $push: { events: { at: now, actor: "buyer", action: "buyer_countered", amount: counterAmount, currency: counterCurrency } },
       }
     );
 
     return Response.json({
       dealId: deal._id.toHexString(),
-      status: "seller_counter_pending",
+      status: "buyer_counter_pending",
       counterAmount,
       counterCurrency,
       message:
-        "Counter-offer sent. Buyer can accept (POST buyer-accept-counter), reject (POST buyer-reject-counter), or counter again (POST buyer-counter).",
+        "Counter-offer sent to seller. Seller can accept (POST seller-accept), reject (POST seller-reject), or counter again (POST seller-counter).",
     });
   } catch (e) {
     if (e instanceof Error && e.message.includes("MONGODB_URI")) {

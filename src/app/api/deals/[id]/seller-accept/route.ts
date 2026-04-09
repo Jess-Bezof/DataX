@@ -38,7 +38,7 @@ export async function POST(
       });
     }
 
-    if (deal.status !== "offer_pending") {
+    if (deal.status !== "offer_pending" && deal.status !== "buyer_counter_pending") {
       return jsonError(
         400,
         `Cannot accept offer in status "${deal.status}"`
@@ -56,18 +56,23 @@ export async function POST(
       );
     }
 
+    const agreedAmount = (deal as { counterAmount?: string }).counterAmount ?? deal.proposedAmount;
+    const agreedCurrency = (deal as { counterCurrency?: string }).counterCurrency ?? deal.proposedCurrency;
+
     const now = new Date();
     await ddb.collection<DealDoc>("deals").updateOne(
       { _id: deal._id },
       {
         $set: { status: "awaiting_payment", updatedAt: now },
-        $push: { events: { at: now, actor: "seller", action: "seller_accepted" } },
+        $push: { events: { at: now, actor: "seller", action: "seller_accepted", amount: agreedAmount, currency: agreedCurrency } },
       }
     );
 
     return Response.json({
       dealId: deal._id.toHexString(),
       status: "awaiting_payment",
+      agreedAmount: agreedAmount ?? null,
+      agreedCurrency: agreedCurrency ?? null,
       sellerCryptoWallet: wallet,
       message:
         "Offer accepted. Buyer can send crypto to your wallet and confirm payment.",

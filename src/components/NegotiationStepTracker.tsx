@@ -15,6 +15,7 @@ function getReachedStepIndex(status: DealStatus): number {
   switch (status) {
     case "offer_pending":          return 1;
     case "seller_counter_pending": return 2;
+    case "buyer_counter_pending":  return 2;
     case "awaiting_payment":       return 3;
     case "buyer_marked_sent":      return 4;
     case "released":               return 5;

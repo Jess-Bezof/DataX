@@ -73,7 +73,10 @@ function getPriceBadge(item: NegotiationItem): BadgeConfig {
     return { label: price ? `${price} ${cur} · agreed` : "Released", className: "bg-[var(--accent)]/20 text-[var(--accent)] border-[var(--accent)]/40" };
   }
   if (status === "seller_counter_pending" && counterAmount) {
-    return { label: `${counterAmount} ${counterCurrency ?? ""} · counter`, className: "bg-purple-500/20 text-purple-300 border-purple-500/40" };
+    return { label: `${counterAmount} ${counterCurrency ?? ""} · seller counter`, className: "bg-purple-500/20 text-purple-300 border-purple-500/40" };
+  }
+  if (status === "buyer_counter_pending" && counterAmount) {
+    return { label: `${counterAmount} ${counterCurrency ?? ""} · buyer counter`, className: "bg-blue-500/20 text-blue-300 border-blue-500/40" };
   }
   if (status === "awaiting_payment" || status === "buyer_marked_sent") {
     const price = counterAmount ?? proposedAmount;
@@ -96,6 +99,7 @@ function actionLabel(event: DealEvent, buyerName: string, sellerName: string): {
     case "seller_countered":  return { text: `${sellerName} countered with ${price ?? "a new price"}` };
     case "buyer_accepted_counter": return { text: `${buyerName} accepted the counter-offer${price ? ` (${price})` : ""}` };
     case "buyer_rejected_counter": return { text: `${buyerName} rejected the counter-offer` };
+    case "buyer_countered":        return { text: `${buyerName} countered with ${price ?? "a new price"}` };
     case "payment_sent":      return { text: `${buyerName} marked payment as sent` };
     case "payment_confirmed": return { text: `${sellerName} confirmed payment received` };
     case "data_released":     return { text: "Data released to buyer", sub: "Deal complete" };

@@ -72,6 +72,7 @@ Env: DATAX_URL (optional), DATAX_API_KEY=dx_... when required below
   node scripts/datax-agent.mjs mark-sent <dealId>
   node scripts/datax-agent.mjs accept-counter <dealId>
   node scripts/datax-agent.mjs reject-counter <dealId>
+  node scripts/datax-agent.mjs buyer-counter <dealId> --amount "90" --currency USDC
   node scripts/datax-agent.mjs get-payload <dealId>
 
   node scripts/datax-agent.mjs post-listing listing.json
@@ -169,6 +170,25 @@ if (cmd === "reject-counter") {
     process.exit(1);
   }
   await http("POST", `/api/deals/${dealId}/buyer-reject-counter`, { apiKey: key });
+}
+
+if (cmd === "buyer-counter") {
+  const key = process.env.DATAX_API_KEY;
+  const dealId = positional[0];
+  const amount = flags.amount;
+  const currency = flags.currency;
+  if (!key || !dealId) {
+    console.error("Usage: DATAX_API_KEY=dx_... buyer-counter <dealId> --amount 90 --currency USDC");
+    process.exit(1);
+  }
+  if (!amount || !currency || amount === true || currency === true) {
+    console.error("Provide both --amount and --currency");
+    process.exit(1);
+  }
+  await http("POST", `/api/deals/${dealId}/buyer-counter`, {
+    apiKey: key,
+    jsonBody: { counterAmount: String(amount), counterCurrency: String(currency) },
+  });
 }
 
 if (cmd === "mark-sent") {

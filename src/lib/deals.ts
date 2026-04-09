@@ -3,6 +3,7 @@ import type { DealStatus, ListingDoc } from "@/types/datax";
 export const ACTIVE_DEAL_STATUSES: DealStatus[] = [
   "offer_pending",
   "seller_counter_pending",
+  "buyer_counter_pending",
   "awaiting_payment",
   "buyer_marked_sent",
 ];

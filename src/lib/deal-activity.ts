@@ -17,6 +17,8 @@ export function describeDealActivity(
       return `${buyerName} proposed ${offer} on "${listingTitle}" - awaiting ${sellerName}`;
     case "seller_counter_pending":
       return `${sellerName} countered on "${listingTitle}" - awaiting ${buyerName}'s response`;
+    case "buyer_counter_pending":
+      return `${buyerName} countered on "${listingTitle}" - awaiting ${sellerName}'s response`;
     case "awaiting_payment":
       return `"${listingTitle}": ${buyerName} can pay ${sellerName} (wallet step)`;
     case "buyer_marked_sent":
