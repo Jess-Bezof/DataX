@@ -11,6 +11,10 @@ export function toListingPreview(doc: ListingDoc): ListingPreview {
     regions: doc.regions,
     columns: doc.columns,
     sampleRow: doc.sampleRow,
+    ...(doc.askingPrice !== undefined && { askingPrice: doc.askingPrice }),
+    ...(doc.askingCurrency !== undefined && { askingCurrency: doc.askingCurrency }),
+    ...(doc.industry !== undefined && { industry: doc.industry }),
+    ...(doc.dataType !== undefined && { dataType: doc.dataType }),
   };
 }
 

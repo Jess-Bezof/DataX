@@ -64,6 +64,10 @@ export type ListingDoc = {
   columns: string[];
   sampleRow: Record<string, unknown>;
   fullPayload: unknown;
+  askingPrice?: string;
+  askingCurrency?: string;
+  industry?: string;
+  dataType?: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -86,4 +90,11 @@ export type ListingPreview = {
   regions: string[];
   columns: string[];
   sampleRow: Record<string, unknown>;
+  askingPrice?: string;
+  askingCurrency?: string;
+  industry?: string;
+  dataType?: string;
+  /** Set only by /api/marketplace — not present in toListingPreview() */
+  sellerName?: string;
+  acquisitionCount?: number;
 };

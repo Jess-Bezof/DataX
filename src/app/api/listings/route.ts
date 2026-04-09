@@ -115,6 +115,27 @@ export async function POST(req: Request) {
 
     assertPayloadSize(fullPayload);
 
+    // Optional metadata fields
+    const askingPrice =
+      typeof body.askingPrice === "string" && body.askingPrice.trim()
+        ? body.askingPrice.trim().slice(0, 40)
+        : undefined;
+    const askingCurrency =
+      typeof body.askingCurrency === "string" && body.askingCurrency.trim()
+        ? body.askingCurrency.trim().slice(0, 24)
+        : undefined;
+    if ((askingPrice && !askingCurrency) || (!askingPrice && askingCurrency)) {
+      return jsonError(400, "Provide both askingPrice and askingCurrency, or neither");
+    }
+    const industry =
+      typeof body.industry === "string" && body.industry.trim()
+        ? body.industry.trim().slice(0, 100)
+        : undefined;
+    const dataType =
+      typeof body.dataType === "string" && body.dataType.trim()
+        ? body.dataType.trim().slice(0, 100)
+        : undefined;
+
     await assertSellerCanCreateListing(
       db.collection<ListingDoc>("listings"),
       agent._id
@@ -131,6 +152,9 @@ export async function POST(req: Request) {
       columns,
       sampleRow,
       fullPayload,
+      ...(askingPrice && { askingPrice, askingCurrency }),
+      ...(industry && { industry }),
+      ...(dataType && { dataType }),
       createdAt: now,
       updatedAt: now,
     };
