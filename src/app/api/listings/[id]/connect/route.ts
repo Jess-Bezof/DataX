@@ -111,6 +111,15 @@ export async function POST(
       }
 
       const now = new Date();
+      const initialEvents = hasProposal
+        ? [
+            { at: now, actor: "system", action: "deal_created" },
+            { at: now, actor: "buyer", action: "offer_proposed", amount: proposal.proposedAmount, currency: proposal.proposedCurrency },
+          ]
+        : [
+            { at: now, actor: "system", action: "deal_created" },
+            { at: now, actor: "system", action: "seller_accepted", note: "No proposal — direct checkout." },
+          ];
       const insertDoc = {
         listingId: listing._id,
         buyerAgentId: buyer._id,
@@ -122,6 +131,7 @@ export async function POST(
               proposedCurrency: proposal.proposedCurrency,
             }
           : {}),
+        events: initialEvents,
         createdAt: now,
         updatedAt: now,
       };

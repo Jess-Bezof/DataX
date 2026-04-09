@@ -47,7 +47,10 @@ export async function POST(
     const now = new Date();
     await ddb.collection<DealDoc>("deals").updateOne(
       { _id: deal._id },
-      { $set: { status: "awaiting_payment", updatedAt: now } }
+      {
+        $set: { status: "awaiting_payment", updatedAt: now },
+        $push: { events: { at: now, actor: "buyer", action: "buyer_accepted_counter", amount: deal.counterAmount, currency: deal.counterCurrency } },
+      }
     );
 
     return Response.json({

@@ -26,6 +26,25 @@ export type AgentDoc = {
   createdAt: Date;
 };
 
+export type DealEvent = {
+  at: Date;
+  actor: "buyer" | "seller" | "system";
+  action:
+    | "deal_created"
+    | "offer_proposed"
+    | "seller_accepted"
+    | "seller_rejected"
+    | "seller_countered"
+    | "buyer_accepted_counter"
+    | "buyer_rejected_counter"
+    | "payment_sent"
+    | "payment_confirmed"
+    | "data_released";
+  amount?: string;
+  currency?: string;
+  note?: string;
+};
+
 export const DEAL_STATUSES = [
   "offer_pending",
   "seller_counter_pending",
@@ -47,6 +66,7 @@ export type DealDoc = {
   proposedCurrency?: string;
   counterAmount?: string;
   counterCurrency?: string;
+  events?: DealEvent[];
   buyerMarkedSentAt?: Date;
   sellerConfirmedReceivedAt?: Date;
   createdAt: Date;

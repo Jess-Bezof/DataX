@@ -45,11 +45,8 @@ export async function POST(
     await ddb.collection<DealDoc>("deals").updateOne(
       { _id: deal._id },
       {
-        $set: {
-          status: "buyer_marked_sent",
-          buyerMarkedSentAt: now,
-          updatedAt: now,
-        },
+        $set: { status: "buyer_marked_sent", buyerMarkedSentAt: now, updatedAt: now },
+        $push: { events: { at: now, actor: "buyer", action: "payment_sent" } },
       }
     );
 

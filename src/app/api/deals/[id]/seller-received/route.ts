@@ -45,12 +45,13 @@ export async function POST(
     await ddb.collection<DealDoc>("deals").updateOne(
       { _id: deal._id },
       {
-        $set: {
-          status: "released",
-          sellerConfirmedReceivedAt: now,
-          updatedAt: now,
-        },
+        $set: { status: "released", sellerConfirmedReceivedAt: now, updatedAt: now },
+        $push: { events: { at: now, actor: "seller", action: "payment_confirmed" } },
       }
+    );
+    await ddb.collection<DealDoc>("deals").updateOne(
+      { _id: deal._id },
+      { $push: { events: { at: now, actor: "system", action: "data_released" } } }
     );
 
     return Response.json({

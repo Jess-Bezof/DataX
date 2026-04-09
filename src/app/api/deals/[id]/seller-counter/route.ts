@@ -57,6 +57,7 @@ export async function POST(
           counterCurrency,
           updatedAt: now,
         },
+        $push: { events: { at: now, actor: "seller", action: "seller_countered", amount: counterAmount, currency: counterCurrency } },
       }
     );
 
