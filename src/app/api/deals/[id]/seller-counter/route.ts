@@ -2,6 +2,7 @@ import { findAgentByApiKey, parseBearer, AuthError } from "@/lib/auth";
 import { assertDealParty, getDealOrError } from "@/lib/deal-http";
 import { getDb, ensureIndexes } from "@/lib/mongo";
 import { handleRouteError, jsonError } from "@/lib/api-helpers";
+import { notifyDealParties } from "@/lib/notify";
 import type { AgentDoc, DealDoc } from "@/types/datax";
 
 export async function POST(
@@ -60,6 +61,15 @@ export async function POST(
         $push: { events: { at: now, actor: "seller", action: "seller_countered", amount: counterAmount, currency: counterCurrency } },
       }
     );
+
+    notifyDealParties({
+      dealId: deal._id.toHexString(),
+      buyerAgentId: deal.buyerAgentId,
+      sellerAgentId: deal.sellerAgentId,
+      newStatus: "seller_counter_pending",
+      counterAmount,
+      counterCurrency,
+    });
 
     return Response.json({
       dealId: deal._id.toHexString(),

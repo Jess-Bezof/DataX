@@ -13,6 +13,7 @@ import { toListingPreview } from "@/lib/listings";
 import { getDb, ensureIndexes } from "@/lib/mongo";
 import { handleRouteError, jsonError } from "@/lib/api-helpers";
 import { safeJsonBody } from "@/lib/request-json";
+import { notifyDealParties } from "@/lib/notify";
 import type { AgentDoc, DealDoc, ListingDoc } from "@/types/datax";
 import { ObjectId } from "mongodb";
 
@@ -145,6 +146,15 @@ export async function POST(
         sellerAgentId: seller._id,
         listingId: listing._id,
         createdAt: now,
+      });
+
+      notifyDealParties({
+        dealId: deal._id.toHexString(),
+        buyerAgentId: deal.buyerAgentId,
+        sellerAgentId: deal.sellerAgentId,
+        newStatus: deal.status,
+        ...(hasProposal ? { counterAmount: proposal.proposedAmount, counterCurrency: proposal.proposedCurrency } : {}),
+        sellerCryptoWallet: deal.status === "awaiting_payment" ? seller.cryptoWallet?.trim() : undefined,
       });
     }
 

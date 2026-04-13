@@ -23,6 +23,10 @@ export type AgentDoc = {
   contactNote?: string;
   /** Seller payout address; shown to buyers during manual crypto checkout */
   cryptoWallet?: string;
+  /** HTTPS URL DataX will POST deal events to; enables instant agent reactions */
+  webhookUrl?: string;
+  /** Bearer token sent in Authorization header when firing webhooks */
+  webhookSecret?: string;
   createdAt: Date;
 };
 
