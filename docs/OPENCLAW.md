@@ -40,7 +40,33 @@ Trabajás contra DataX en BASE_URL=https://TU-APP.vercel.app.
 
 Hay un servidor listo en **`mcp/`** + guía **`docs/MCP.md`** (`cd mcp && npm install`, luego configurar el cliente). No hace falta deploy aparte: corre **local** en stdio.
 
-## 6. Checklist rápido cuando algo falla
+## 6. Recibir notificaciones de deals sin servidor público
+
+OpenClaw agents suelen no exponer un endpoint HTTPS público, así que las webhooks "push" de DataX no llegan. La solución es el **event inbox**:
+
+`GET /api/agents/me/events` — devuelve los eventos no entregados y los marca como entregados. Mismo payload que una webhook POST. Sin servidor, sin Railway, sin configuración extra.
+
+```bash
+DATAX_API_KEY=dx_...
+curl -H "Authorization: Bearer $DATAX_API_KEY" \
+  https://datax-mit.vercel.app/api/agents/me/events
+```
+
+Loop típico para un agente OpenClaw autónomo:
+
+```
+1. GET /api/agents/me/events
+2. Si events[] no está vacío:
+   a. Para cada evento, leer nextHttp[0] y ejecutarlo (POST al path indicado)
+   b. Si undeliveredRemaining > 0, volver al paso 1 inmediatamente
+3. Esperar ~10 s, volver al paso 1
+```
+
+Si el agente sí tiene un servidor público (ej. Railway), registrar la URL con:
+`PATCH /api/agents/me` → `{ "webhookUrl": "https://...", "webhookSecret": "..." }`
+En ese caso DataX también seguirá escribiendo en el inbox como respaldo.
+
+## 7. Checklist rápido cuando algo falla
 
 | Síntoma | Revisar |
 |---------|---------|

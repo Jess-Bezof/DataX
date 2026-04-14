@@ -2,6 +2,22 @@ import { getDb } from "@/lib/mongo";
 import type { AgentDoc, DealStatus } from "@/types/datax";
 import type { ObjectId } from "mongodb";
 
+export type AgentEventDoc = {
+  agentId: ObjectId;
+  role: "buyer" | "seller";
+  event: "deal_updated";
+  dealId: string;
+  status: DealStatus;
+  counterAmount?: string;
+  counterCurrency?: string;
+  agreedAmount?: string;
+  agreedCurrency?: string;
+  sellerCryptoWallet?: string;
+  nextHttp: { method: string; path: string; note?: string }[];
+  createdAt: Date;
+  deliveredAt: Date | null;
+};
+
 type NextHttp = { method: string; path: string; note?: string };
 
 type NotifyPayload = {
@@ -22,7 +38,7 @@ async function fireWebhook(url: string, payload: NotifyPayload, secret?: string)
   try {
     console.log(`[notify] firing webhook to ${url} status=${payload.status} role=${payload.yourRole}`);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 25000);
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (secret) headers["Authorization"] = `Bearer ${secret}`;
     const res = await fetch(url, {
@@ -105,11 +121,11 @@ export async function notifyDealParties(params: {
     const [buyer, seller] = await Promise.all([
       db.collection<AgentDoc>("agents").findOne(
         { _id: params.buyerAgentId },
-        { projection: { webhookUrl: 1 } }
+        { projection: { webhookUrl: 1, webhookSecret: 1 } }
       ),
       db.collection<AgentDoc>("agents").findOne(
         { _id: params.sellerAgentId },
-        { projection: { webhookUrl: 1 } }
+        { projection: { webhookUrl: 1, webhookSecret: 1 } }
       ),
     ]);
 
@@ -123,6 +139,44 @@ export async function notifyDealParties(params: {
     const sellerSecret = (seller as (AgentDoc & { webhookSecret?: string }) | null)?.webhookSecret;
 
     console.log(`[notify] dealId=${id} status=${s} buyerWebhook=${buyerWebhook ?? "none"} sellerWebhook=${sellerWebhook ?? "none"}`);
+
+    // Always write to the event inbox so agents without a public server can poll for events.
+    const now = new Date();
+    const inboxWrites: Promise<unknown>[] = [];
+    if (buyer) {
+      inboxWrites.push(db.collection<AgentEventDoc>("agent_events").insertOne({
+        agentId: buyer._id,
+        role: "buyer",
+        event: "deal_updated",
+        dealId: id,
+        status: s,
+        counterAmount: params.counterAmount,
+        counterCurrency: params.counterCurrency,
+        agreedAmount: params.agreedAmount,
+        agreedCurrency: params.agreedCurrency,
+        sellerCryptoWallet: params.sellerCryptoWallet,
+        nextHttp: buildNextHttp("buyer", id, s, params.sellerCryptoWallet),
+        createdAt: now,
+        deliveredAt: null,
+      }));
+    }
+    if (seller) {
+      inboxWrites.push(db.collection<AgentEventDoc>("agent_events").insertOne({
+        agentId: seller._id,
+        role: "seller",
+        event: "deal_updated",
+        dealId: id,
+        status: s,
+        counterAmount: params.counterAmount,
+        counterCurrency: params.counterCurrency,
+        agreedAmount: params.agreedAmount,
+        agreedCurrency: params.agreedCurrency,
+        nextHttp: buildNextHttp("seller", id, s),
+        createdAt: now,
+        deliveredAt: null,
+      }));
+    }
+    await Promise.all(inboxWrites).catch(() => {/* never block deal routes */});
 
     if (buyerWebhook) {
       fires.push(fireWebhook(buyerWebhook, {

@@ -37,5 +37,6 @@ export async function ensureIndexes(): Promise<void> {
     buyerAgentId: 1,
     status: 1,
   });
+  await db.collection("agent_events").createIndex({ agentId: 1, deliveredAt: 1, createdAt: 1 });
   indexesEnsured = true;
 }

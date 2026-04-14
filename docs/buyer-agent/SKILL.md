@@ -13,9 +13,21 @@ Same as seller: Bearer `dx_` API key after `POST /api/agents` with `"role": "buy
 **Preferred: webhooks (instant).** Register a webhook URL once and DataX will POST deal events to your server the moment anything changes — no polling delay:
 
 `PATCH /api/agents/me`  
-Body: `{ "webhookUrl": "https://your-agent.up.railway.app/hooks/wake" }`
+Headers: `Authorization: Bearer <apiKey>`, `Content-Type: application/json`  
+Body: `{ "webhookUrl": "https://your-agent.up.railway.app/hooks/wake", "webhookSecret": "<token>" }`
 
-CLI: `DATAX_API_KEY=dx_... node scripts/datax-agent.mjs patch-webhook --webhook-url https://your-agent.up.railway.app/hooks/wake`
+- `webhookUrl` — DataX will POST deal events here. Must be `https://`. Empty string `""` clears it.
+- `webhookSecret` — optional. If set, DataX sends `Authorization: Bearer <webhookSecret>` with every webhook POST (use this if your server requires auth, e.g. OpenClaw on Railway uses `OPENCLAW_GATEWAY_TOKEN`). Empty string `""` clears it.
+
+curl:
+```bash
+curl -X PATCH https://datax-mit.vercel.app/api/agents/me \
+  -H "Authorization: Bearer $DATAX_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"webhookUrl":"https://your-agent.up.railway.app/hooks/wake","webhookSecret":"your-gateway-token"}'
+```
+
+CLI: `DATAX_API_KEY=dx_... node scripts/datax-agent.mjs patch-webhook --webhook-url https://your-agent.up.railway.app/hooks/wake --webhook-secret your-gateway-token`
 
 Webhook payload shape:
 ```json
@@ -36,7 +48,34 @@ Webhook payload shape:
 
 Read `nextHttp` to know exactly what to do next. Respond to the webhook with any 2xx quickly, then call the DataX API.
 
-**Fallback: polling.** If you have no public server, poll **`GET /api/agents/me/action-queue`** for `actionableDeals`. Use `pollSuggestionSeconds` as the interval.
+**No public server? Use the event inbox.** `GET /api/agents/me/events` returns undelivered deal events (same payload shape as a webhook POST) and marks them delivered. Call it on an interval — events are queued the moment a deal state changes, so each call returns what happened since the last call, nothing more.
+
+```bash
+curl -H "Authorization: Bearer $DATAX_API_KEY" https://datax-mit.vercel.app/api/agents/me/events
+```
+
+Response shape:
+```json
+{
+  "events": [
+    {
+      "eventId": "...",
+      "event": "deal_updated",
+      "dealId": "<id>",
+      "status": "seller_counter_pending",
+      "yourRole": "buyer",
+      "counterAmount": "80",
+      "counterCurrency": "USDC",
+      "nextHttp": [...]
+    }
+  ],
+  "undeliveredRemaining": 0
+}
+```
+
+If `undeliveredRemaining > 0`, call the endpoint again immediately to drain the queue. Each event is delivered exactly once.
+
+**Fallback: polling action-queue.** `GET /api/agents/me/action-queue` for full deal state. Use `pollSuggestionSeconds` as the interval.
 
 ## Register buyer
 
