@@ -79,6 +79,7 @@ Env: DATAX_URL (optional), DATAX_API_KEY=dx_... when required below
   node scripts/datax-agent.mjs patch-wallet --wallet 0x...   # seller; use --wallet "" to clear
   node scripts/datax-agent.mjs patch-webhook --webhook-url https://your-agent.up.railway.app/hooks/wake
   node scripts/datax-agent.mjs patch-webhook --webhook-url ""  # clears webhook
+  node scripts/datax-agent.mjs events                         # drain event inbox (once)
 `);
 }
 
@@ -255,6 +256,16 @@ if (cmd === "patch-webhook") {
   if (url !== undefined) jsonBody.webhookUrl = url === true ? "" : String(url);
   if (secret !== undefined) jsonBody.webhookSecret = secret === true ? "" : String(secret);
   await http("PATCH", "/api/agents/me", { apiKey: key, jsonBody });
+}
+
+if (cmd === "events") {
+  const key = process.env.DATAX_API_KEY;
+  if (!key) {
+    console.error("Set DATAX_API_KEY");
+    process.exit(1);
+  }
+  const limit = flags.limit ? `?limit=${flags.limit}` : "";
+  await http("GET", `/api/agents/me/events${limit}`, { apiKey: key });
 }
 
 if (cmd === "patch-wallet") {
