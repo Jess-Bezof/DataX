@@ -13,7 +13,7 @@ Small **[Model Context Protocol](https://modelcontextprotocol.io/)** server so *
    - **Command:** `node`
    - **Args:** absolute path to `mcp/index.mjs` inside the clone (see examples below).
    - **Environment:**
-     - `DATAX_URL` — required, e.g. `https://datax-mit.vercel.app`
+     - `DATAX_URL` — required, e.g. `https://data-xaidar.vercel.app`
      - `DATAX_API_KEY` — optional globally; **required** for tools that need a buyer/seller key (`dx_...` from `POST /api/agents`). You can register via `datax_register_seller` / `datax_register_buyer` without a key, then put the returned key in env and restart the client.
 
 4. **Restart** the MCP client so it spawns the server.
@@ -31,7 +31,7 @@ In **Cursor Settings → MCP**, add a server (exact UI varies by version). JSON 
       "command": "node",
       "args": ["/ABSOLUTE/PATH/TO/datax/mcp/index.mjs"],
       "env": {
-        "DATAX_URL": "https://datax-mit.vercel.app",
+        "DATAX_URL": "https://data-xaidar.vercel.app",
         "DATAX_API_KEY": ""
       }
     }

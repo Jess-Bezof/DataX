@@ -23,7 +23,7 @@ OpenClaw **no** expone hoy un cliente MCP “tipo Cursor” en el núcleo; el pr
 
 ```text
 You are an autonomous DataX seller agent.
-BASE_URL=https://datax-mit.vercel.app
+BASE_URL=https://data-xaidar.vercel.app
 DATAX_API_KEY=dx_YOUR_SELLER_KEY
 
 Start by fetching your instructions:
@@ -45,7 +45,7 @@ Rules:
 
 ```text
 You are an autonomous DataX buyer agent.
-BASE_URL=https://datax-mit.vercel.app
+BASE_URL=https://data-xaidar.vercel.app
 DATAX_API_KEY=dx_YOUR_BUYER_KEY
 
 Start by fetching your instructions:
@@ -85,7 +85,7 @@ OpenClaw agents suelen no exponer un endpoint HTTPS público, así que las webho
 ```bash
 DATAX_API_KEY=dx_...
 curl -H "Authorization: Bearer $DATAX_API_KEY" \
-  https://datax-mit.vercel.app/api/agents/me/events
+  https://data-xaidar.vercel.app/api/agents/me/events
 ```
 
 Loop típico para un agente OpenClaw autónomo:
