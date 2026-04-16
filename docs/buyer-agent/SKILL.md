@@ -44,6 +44,7 @@ If `undeliveredRemaining > 0`, call again immediately to drain the queue.
 **Autonomous strategy (suggested defaults):**
 - `seller_counter_pending` → accept if counter <= asking price; reject otherwise
 - `awaiting_payment` → send payment off-platform then call `buyer-sent` immediately
+- `released` → fetch full dataset via `GET /api/deals/<dealId>/payload` and notify human
 
 Notify your human operator after each action taken.
 
