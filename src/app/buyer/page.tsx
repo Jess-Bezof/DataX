@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SiteNav } from "@/components/SiteNav";
 import { ListingPreview } from "@/components/ListingPreview";
+import { StarDisplay, StarInput } from "@/components/StarRating";
 import { CONTACT_METHODS } from "@/types/datax";
 import type { ListingPreview as ListingPreviewType } from "@/types/datax";
 
@@ -22,6 +23,10 @@ type DealRow = {
   listing: ListingPreviewType | null;
   updatedAt: string;
   sellerCryptoWallet?: string | null;
+  buyerMarkedSentAt?: string | null;
+  canRate: boolean;
+  hasRated: boolean;
+  counterpartyRating: { stars: number; comment: string | null } | null;
 };
 
 export default function BuyerPage() {
@@ -45,6 +50,8 @@ export default function BuyerPage() {
   const [connectFor, setConnectFor] = useState<string | null>(null);
   const [deals, setDeals] = useState<DealRow[]>([]);
   const [payloadByDeal, setPayloadByDeal] = useState<Record<string, string>>({});
+  const [ratingStars, setRatingStars] = useState<Record<string, number>>({});
+  const [ratingComments, setRatingComments] = useState<Record<string, string>>({});
 
   const buyerDeals = useMemo(
     () => deals.filter((d) => d.role === "buyer"),
@@ -56,6 +63,10 @@ export default function BuyerPage() {
   );
   const pastDeals = useMemo(
     () => buyerDeals.filter((d) => d.status === "released"),
+    [buyerDeals]
+  );
+  const stuckDeals = useMemo(
+    () => buyerDeals.filter((d) => d.status === "buyer_marked_sent" && d.canRate),
     [buyerDeals]
   );
 
@@ -209,6 +220,28 @@ export default function BuyerPage() {
     }
   }
 
+  async function rateSeller(dealId: string) {
+    setErr(null);
+    if (!apiKey) return;
+    const stars = ratingStars[dealId];
+    if (!stars) { setErr("Select a star rating first."); return; }
+    const comment = ratingComments[dealId]?.trim() || undefined;
+    const r = await fetch(`/api/deals/${dealId}/rate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ stars, comment }),
+    });
+    const data = await r.json();
+    if (!r.ok) setErr(data.error || "Rating failed");
+    else {
+      setMsg(data.message);
+      await loadDeals(apiKey);
+    }
+  }
+
   function logout() {
     localStorage.removeItem(STORAGE);
     setApiKey("");
@@ -220,23 +253,26 @@ export default function BuyerPage() {
   }
 
   function renderDealCard(d: DealRow, showPayload: boolean) {
+    const isStuckScam = d.status === "buyer_marked_sent" && d.canRate;
     return (
       <li
         key={d.dealId}
-        className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3"
+        className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 space-y-2"
       >
-        <p className="font-medium text-[var(--foreground)]">
-          {d.listing?.title ?? "Listing"} ·{" "}
-          <span className="text-[var(--muted)]">{d.status}</span>
-        </p>
-        <p className="text-xs text-[var(--muted)]">
-          Seller: {d.counterpartyName}
-          {d.proposedAmount
-            ? ` · Offer: ${d.proposedAmount} ${d.proposedCurrency ?? ""}`
-            : ""}
-        </p>
+        <div>
+          <p className="font-medium text-[var(--foreground)]">
+            {d.listing?.title ?? "Listing"} ·{" "}
+            <span className="text-[var(--muted)]">{d.status}</span>
+          </p>
+          <p className="text-xs text-[var(--muted)]">
+            Seller: {d.counterpartyName}
+            {d.proposedAmount
+              ? ` · Offer: ${d.proposedAmount} ${d.proposedCurrency ?? ""}`
+              : ""}
+          </p>
+        </div>
         {d.sellerCryptoWallet && (
-          <p className="mt-2 break-all font-mono text-xs text-[var(--accent)]">
+          <p className="break-all font-mono text-xs text-[var(--accent)]">
             Pay this wallet: {d.sellerCryptoWallet}
           </p>
         )}
@@ -244,13 +280,13 @@ export default function BuyerPage() {
           <button
             type="button"
             onClick={() => buyerSent(d.dealId)}
-            className="mt-2 rounded border border-[var(--accent)] px-2 py-1 text-[var(--accent)]"
+            className="rounded border border-[var(--accent)] px-2 py-1 text-[var(--accent)]"
           >
             I sent the crypto
           </button>
         )}
         {showPayload && d.status === "released" && (
-          <div className="mt-2 space-y-2">
+          <div className="space-y-2">
             <button
               type="button"
               onClick={() => fetchPayload(d.dealId)}
@@ -263,6 +299,47 @@ export default function BuyerPage() {
                 {payloadByDeal[d.dealId]}
               </pre>
             )}
+          </div>
+        )}
+        {isStuckScam && (
+          <p className="text-xs text-red-400">
+            48h passed since payment — seller hasn&apos;t confirmed. You can leave a rating.
+          </p>
+        )}
+        {d.counterpartyRating && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[var(--muted)]">Seller rated you:</span>
+            <StarDisplay value={d.counterpartyRating.stars} size="xs" />
+            {d.counterpartyRating.comment && (
+              <span className="text-[var(--muted)] italic">&ldquo;{d.counterpartyRating.comment}&rdquo;</span>
+            )}
+          </div>
+        )}
+        {d.hasRated && (
+          <p className="text-xs text-[var(--muted)]">You rated this seller.</p>
+        )}
+        {d.canRate && !d.hasRated && (
+          <div className="space-y-2 rounded border border-[var(--border)] bg-[var(--background)] p-2">
+            <p className="text-xs text-[var(--foreground)]">Rate this seller:</p>
+            <StarInput
+              value={ratingStars[d.dealId] ?? 0}
+              onChange={(s) => setRatingStars((p) => ({ ...p, [d.dealId]: s }))}
+            />
+            <input
+              className="w-full rounded border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-xs text-[var(--foreground)] placeholder-[var(--muted)]"
+              placeholder="Optional comment (max 300 chars)"
+              maxLength={300}
+              value={ratingComments[d.dealId] ?? ""}
+              onChange={(e) => setRatingComments((p) => ({ ...p, [d.dealId]: e.target.value }))}
+            />
+            <button
+              type="button"
+              onClick={() => rateSeller(d.dealId)}
+              disabled={!ratingStars[d.dealId]}
+              className="rounded bg-[var(--accent)] px-2 py-1 text-xs font-medium text-black disabled:opacity-40"
+            >
+              Submit rating
+            </button>
           </div>
         )}
       </li>
@@ -405,6 +482,18 @@ export default function BuyerPage() {
             </ul>
           )}
         </section>
+
+        {stuckDeals.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-medium text-red-400">Unconfirmed deals (48h+ elapsed)</h2>
+            <p className="text-xs text-[var(--muted)]">
+              These deals have been stuck after you marked payment sent. Consider leaving a rating.
+            </p>
+            <ul className="space-y-3 text-sm">
+              {stuckDeals.map((d) => renderDealCard(d, false))}
+            </ul>
+          </section>
+        )}
 
         <section className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
           <h2 className="font-medium text-[var(--foreground)]">Optional price proposal</h2>

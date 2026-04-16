@@ -2,7 +2,8 @@ import { findAgentByApiKey, parseBearer, AuthError } from "@/lib/auth";
 import { getDb, ensureIndexes } from "@/lib/mongo";
 import { handleRouteError, jsonError } from "@/lib/api-helpers";
 import { toListingPreview } from "@/lib/listings";
-import type { AgentDoc, DealDoc, ListingDoc } from "@/types/datax";
+import type { AgentDoc, DealDoc, ListingDoc, RatingDoc } from "@/types/datax";
+import { RATING_TIMEOUT_MS } from "@/types/datax";
 import { ObjectId } from "mongodb";
 
 export async function GET(request: Request) {
@@ -89,6 +90,19 @@ export async function GET(request: Request) {
       ])
     );
 
+    const dealIds = deals.map((d) => d._id);
+    const existingRatings = await db
+      .collection<RatingDoc>("ratings")
+      .find({ dealId: { $in: dealIds } })
+      .toArray();
+    const ratingMap = new Map<string, RatingDoc[]>();
+    for (const r of existingRatings) {
+      const key = r.dealId.toHexString();
+      const arr = ratingMap.get(key) ?? [];
+      arr.push(r);
+      ratingMap.set(key, arr);
+    }
+
     const out = deals.map((d) => {
       const list = listingMap.get(d.listingId.toHexString());
       const isBuyer = agent._id.equals(d.buyerAgentId);
@@ -98,10 +112,30 @@ export async function GET(request: Request) {
       const showWallet =
         isBuyer &&
         (d.status === "awaiting_payment" || d.status === "buyer_marked_sent");
+
+      const myRole = isBuyer ? "buyer" : "seller";
+      const dealRatings = ratingMap.get(d._id.toHexString()) ?? [];
+      const hasRated = dealRatings.some((r) => r.raterRole === myRole);
+
+      let canRate = false;
+      if (!hasRated) {
+        if (isBuyer) {
+          if (d.status === "released") {
+            canRate = true;
+          } else if (d.status === "buyer_marked_sent" && d.buyerMarkedSentAt) {
+            canRate = Date.now() - new Date(d.buyerMarkedSentAt).getTime() >= RATING_TIMEOUT_MS;
+          }
+        } else if (d.status === "released") {
+          canRate = true;
+        }
+      }
+
+      const counterpartyRating = dealRatings.find((r) => r.raterRole !== myRole);
+
       return {
         dealId: d._id.toHexString(),
         status: d.status,
-        role: isBuyer ? "buyer" : "seller",
+        role: myRole,
         proposedAmount: d.proposedAmount,
         proposedCurrency: d.proposedCurrency,
         counterAmount: d.counterAmount,
@@ -113,6 +147,11 @@ export async function GET(request: Request) {
         updatedAt: d.updatedAt.toISOString(),
         sellerCryptoWallet: showWallet
           ? walletMap.get(d.sellerAgentId.toHexString()) ?? null
+          : null,
+        canRate,
+        hasRated,
+        counterpartyRating: counterpartyRating
+          ? { stars: counterpartyRating.stars, comment: counterpartyRating.comment ?? null }
           : null,
       };
     });

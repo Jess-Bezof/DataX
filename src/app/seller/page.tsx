@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SiteNav } from "@/components/SiteNav";
 import { ListingPreview } from "@/components/ListingPreview";
+import { StarDisplay, StarInput } from "@/components/StarRating";
 import { CONTACT_METHODS } from "@/types/datax";
 import type { ListingPreview as ListingPreviewType } from "@/types/datax";
 
@@ -32,6 +33,16 @@ type DealRow = {
   counterpartyName: string;
   listing: ListingPreviewType | null;
   updatedAt: string;
+  canRate: boolean;
+  hasRated: boolean;
+  counterpartyRating: { stars: number; comment: string | null } | null;
+};
+
+type ReputationData = {
+  averageStars: number | null;
+  totalRatings: number;
+  totalDealsCompleted: number;
+  averageDealCompletionMinutes: number | null;
 };
 
 export default function SellerPage() {
@@ -48,6 +59,9 @@ export default function SellerPage() {
   const [backupValue, setBackupValue] = useState("");
 
   const [walletInput, setWalletInput] = useState("");
+  const [reputation, setReputation] = useState<ReputationData | null>(null);
+  const [ratingStars, setRatingStars] = useState<Record<string, number>>({});
+  const [ratingComments, setRatingComments] = useState<Record<string, string>>({});
 
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
@@ -88,14 +102,26 @@ export default function SellerPage() {
     if (r.ok) setDeals(data.deals ?? []);
   }, []);
 
+  const [agentId, setAgentId] = useState<string | null>(null);
+
+  const loadReputation = useCallback(async (aid: string) => {
+    try {
+      const r = await fetch(`/api/agents/${aid}/reputation`);
+      const data = await r.json();
+      if (r.ok) setReputation(data);
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     const k = typeof window !== "undefined" ? localStorage.getItem(STORAGE) : null;
+    const aid = typeof window !== "undefined" ? localStorage.getItem(STORAGE + "_agent_id") : null;
     if (k) {
       setApiKey(k);
+      if (aid) { setAgentId(aid); loadReputation(aid).catch(() => {}); }
       loadMine(k).catch(() => {});
       loadDeals(k).catch(() => {});
     }
-  }, [loadMine, loadDeals]);
+  }, [loadMine, loadDeals, loadReputation]);
 
   async function register(e: React.FormEvent) {
     e.preventDefault();
@@ -121,11 +147,14 @@ export default function SellerPage() {
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || "Registration failed");
       localStorage.setItem(STORAGE, data.apiKey);
+      if (data.agentId) localStorage.setItem(STORAGE + "_agent_id", data.agentId);
       setApiKey(data.apiKey);
+      setAgentId(data.agentId ?? null);
       setShownKey(data.apiKey);
       setMsg(data.message);
       await loadMine(data.apiKey);
       await loadDeals(data.apiKey);
+      if (data.agentId) loadReputation(data.agentId).catch(() => {});
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Error");
     }
@@ -231,11 +260,37 @@ export default function SellerPage() {
     }
   }
 
+  async function rateBuyer(dealId: string) {
+    setErr(null);
+    if (!apiKey) return;
+    const stars = ratingStars[dealId];
+    if (!stars) { setErr("Select a star rating first."); return; }
+    const comment = ratingComments[dealId]?.trim() || undefined;
+    const r = await fetch(`/api/deals/${dealId}/rate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ stars, comment }),
+    });
+    const data = await r.json();
+    if (!r.ok) setErr(data.error || "Rating failed");
+    else {
+      setMsg(data.message);
+      await loadDeals(apiKey);
+      if (agentId) loadReputation(agentId).catch(() => {});
+    }
+  }
+
   function logout() {
     localStorage.removeItem(STORAGE);
+    localStorage.removeItem(STORAGE + "_agent_id");
     setApiKey("");
+    setAgentId(null);
     setMine([]);
     setDeals([]);
+    setReputation(null);
     setShownKey(null);
     setMsg("Cleared saved API key from this browser.");
   }
@@ -288,6 +343,23 @@ export default function SellerPage() {
                 {completedDeals.length}
               </p>
               <p className="text-[var(--muted)]">Sales done</p>
+            </div>
+          </section>
+        )}
+
+        {apiKey && reputation && (
+          <section className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 space-y-2">
+            <h2 className="font-medium text-[var(--foreground)]">Your reputation</h2>
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <StarDisplay value={reputation.averageStars} count={reputation.totalRatings} size="md" />
+              <span className="text-[var(--muted)]">
+                {reputation.totalDealsCompleted} deal{reputation.totalDealsCompleted !== 1 ? "s" : ""} completed
+              </span>
+              {reputation.averageDealCompletionMinutes != null && (
+                <span className="text-[var(--muted)]">
+                  ~{reputation.averageDealCompletionMinutes}min avg deal time
+                </span>
+              )}
             </div>
           </section>
         )}
@@ -452,19 +524,57 @@ export default function SellerPage() {
               {apiKey ? "No completed releases yet." : "Register to see history."}
             </p>
           ) : (
-            <ul className="space-y-2 text-sm text-[var(--muted)]">
+            <ul className="space-y-3 text-sm text-[var(--muted)]">
               {completedDeals.map((d) => (
                 <li
                   key={d.dealId}
-                  className="rounded border border-[var(--border)] bg-[var(--card)] px-3 py-2"
+                  className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-3 space-y-2"
                 >
-                  <span className="text-[var(--foreground)]">
-                    {d.listing?.title ?? "Listing"}
-                  </span>{" "}
-                  → buyer {d.counterpartyName}
-                  <time className="mt-1 block text-xs">
-                    {new Date(d.updatedAt).toLocaleString()}
-                  </time>
+                  <div>
+                    <span className="text-[var(--foreground)]">
+                      {d.listing?.title ?? "Listing"}
+                    </span>{" "}
+                    → buyer {d.counterpartyName}
+                    <time className="mt-1 block text-xs">
+                      {new Date(d.updatedAt).toLocaleString()}
+                    </time>
+                  </div>
+                  {d.counterpartyRating && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-[var(--muted)]">Buyer rated you:</span>
+                      <StarDisplay value={d.counterpartyRating.stars} size="xs" />
+                      {d.counterpartyRating.comment && (
+                        <span className="text-[var(--muted)] italic">&ldquo;{d.counterpartyRating.comment}&rdquo;</span>
+                      )}
+                    </div>
+                  )}
+                  {d.hasRated && (
+                    <p className="text-xs text-[var(--muted)]">You rated this buyer.</p>
+                  )}
+                  {d.canRate && !d.hasRated && (
+                    <div className="space-y-2 rounded border border-[var(--border)] bg-[var(--background)] p-2">
+                      <p className="text-xs text-[var(--foreground)]">Rate this buyer:</p>
+                      <StarInput
+                        value={ratingStars[d.dealId] ?? 0}
+                        onChange={(s) => setRatingStars((p) => ({ ...p, [d.dealId]: s }))}
+                      />
+                      <input
+                        className="w-full rounded border border-[var(--border)] bg-[var(--card)] px-2 py-1 text-xs text-[var(--foreground)] placeholder-[var(--muted)]"
+                        placeholder="Optional comment (max 300 chars)"
+                        maxLength={300}
+                        value={ratingComments[d.dealId] ?? ""}
+                        onChange={(e) => setRatingComments((p) => ({ ...p, [d.dealId]: e.target.value }))}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => rateBuyer(d.dealId)}
+                        disabled={!ratingStars[d.dealId]}
+                        className="rounded bg-[var(--accent)] px-2 py-1 text-xs font-medium text-black disabled:opacity-40"
+                      >
+                        Submit rating
+                      </button>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

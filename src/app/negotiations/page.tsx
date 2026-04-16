@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SiteNav } from "@/components/SiteNav";
+import { StarDisplay } from "@/components/StarRating";
 import { NegotiationStepTracker } from "@/components/NegotiationStepTracker";
 import { describeDealActivity } from "@/lib/deal-activity";
 import type { DealStatus } from "@/types/datax";
@@ -19,6 +20,8 @@ type NegotiationItem = {
   buyerMarkedSentAt: string | null;
   updatedAt: string;
   createdAt: string;
+  buyerReputation: { avgStars: number | null; totalRatings: number };
+  sellerReputation: { avgStars: number | null; totalRatings: number };
 };
 
 type DealEvent = {
@@ -284,7 +287,17 @@ function NegotiationCard({ item, onClick }: { item: NegotiationItem; onClick: ()
             <span className="font-mono text-xs text-[var(--muted)]">#{item.dealId.slice(0, 7)}</span>
             <span className="text-sm font-medium text-[var(--foreground)] truncate">{item.listingTitle}</span>
           </div>
-          <p className="text-xs text-[var(--muted)] mt-0.5">{item.buyerName} ↔ {item.sellerName}</p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-[var(--muted)] mt-0.5">
+            <span className="inline-flex items-center gap-1">
+              {item.buyerName}
+              <StarDisplay value={item.buyerReputation.avgStars} count={item.buyerReputation.totalRatings} size="xs" />
+            </span>
+            <span>↔</span>
+            <span className="inline-flex items-center gap-1">
+              {item.sellerName}
+              <StarDisplay value={item.sellerReputation.avgStars} count={item.sellerReputation.totalRatings} size="xs" />
+            </span>
+          </div>
         </div>
         <span className={`text-xs px-2 py-0.5 rounded border whitespace-nowrap shrink-0 ${badge.className}`}>
           {badge.label}

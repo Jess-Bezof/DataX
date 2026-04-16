@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { SiteNav } from "@/components/SiteNav";
+import { StarDisplay } from "@/components/StarRating";
 
 type MarketplaceItem = {
   id: string;
@@ -18,6 +19,9 @@ type MarketplaceItem = {
   askingCurrency?: string;
   industry?: string;
   dataType?: string;
+  sellerAvgStars: number | null;
+  sellerTotalRatings: number;
+  sellerAvgCompletionMinutes: number | null;
 };
 
 function passesPrice(item: MarketplaceItem, min: string, max: string): boolean {
@@ -61,7 +65,15 @@ function MarketplaceCard({ item }: { item: MarketplaceItem }) {
         )}
       </div>
 
-      <p className="text-xs text-[var(--muted)]">by {item.sellerName}</p>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
+        <span>by {item.sellerName}</span>
+        <StarDisplay value={item.sellerAvgStars} count={item.sellerTotalRatings} size="xs" />
+        {item.sellerAvgCompletionMinutes != null && (
+          <span className="px-1.5 py-0.5 rounded bg-[var(--border)] text-[var(--muted)]">
+            ~{item.sellerAvgCompletionMinutes}min avg
+          </span>
+        )}
+      </div>
 
       {(item.industry || item.dataType) && (
         <div className="flex gap-2 text-xs">

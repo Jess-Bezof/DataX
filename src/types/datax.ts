@@ -106,6 +106,20 @@ export type ConnectionEventDoc = {
   createdAt: Date;
 };
 
+export type RatingDoc = {
+  _id: ObjectId;
+  dealId: ObjectId;
+  listingId: ObjectId;
+  raterAgentId: ObjectId;
+  targetAgentId: ObjectId;
+  raterRole: "buyer" | "seller";
+  stars: number;
+  comment?: string;
+  createdAt: Date;
+};
+
+export const RATING_TIMEOUT_MS = 48 * 60 * 60 * 1000;
+
 /** Public-safe shape (no fullPayload, no api keys) */
 export type ListingPreview = {
   id: string;

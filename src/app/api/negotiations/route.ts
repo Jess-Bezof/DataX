@@ -1,6 +1,6 @@
 import { getDb, ensureIndexes } from "@/lib/mongo";
 import { handleRouteError, jsonError } from "@/lib/api-helpers";
-import type { AgentDoc, DealDoc, ListingDoc } from "@/types/datax";
+import type { AgentDoc, DealDoc, ListingDoc, RatingDoc } from "@/types/datax";
 import { ObjectId } from "mongodb";
 
 export async function GET() {
@@ -31,7 +31,7 @@ export async function GET() {
     }
     const agentOids = [...agentIdSet].map((id) => new ObjectId(id));
 
-    const [listings, agents] = await Promise.all([
+    const [listings, agents, agentRatings] = await Promise.all([
       db
         .collection<ListingDoc>("listings")
         .find({ _id: { $in: listingIds } })
@@ -42,6 +42,11 @@ export async function GET() {
         .find({ _id: { $in: agentOids } })
         .project({ displayName: 1 })
         .toArray(),
+      db
+        .collection<RatingDoc>("ratings")
+        .find({ targetAgentId: { $in: agentOids } })
+        .project({ targetAgentId: 1, stars: 1 })
+        .toArray(),
     ]);
 
     const titleMap = new Map(
@@ -50,6 +55,24 @@ export async function GET() {
     const nameMap = new Map(
       agents.map((a) => [a._id.toHexString(), a.displayName])
     );
+
+    type RepSummary = { sum: number; count: number };
+    const repMap = new Map<string, RepSummary>();
+    for (const r of agentRatings) {
+      const key = (r as unknown as RatingDoc).targetAgentId.toHexString();
+      const entry = repMap.get(key) ?? { sum: 0, count: 0 };
+      entry.sum += (r as unknown as RatingDoc).stars;
+      entry.count += 1;
+      repMap.set(key, entry);
+    }
+    function agentRep(agentId: string) {
+      const rep = repMap.get(agentId);
+      if (!rep) return { avgStars: null, totalRatings: 0 };
+      return {
+        avgStars: Math.round((rep.sum / rep.count) * 100) / 100,
+        totalRatings: rep.count,
+      };
+    }
 
     const negotiations = deals.map((d) => ({
       dealId: d._id.toHexString(),
@@ -65,6 +88,8 @@ export async function GET() {
       buyerMarkedSentAt: d.buyerMarkedSentAt?.toISOString() ?? null,
       updatedAt: d.updatedAt.toISOString(),
       createdAt: d.createdAt.toISOString(),
+      buyerReputation: agentRep(d.buyerAgentId.toHexString()),
+      sellerReputation: agentRep(d.sellerAgentId.toHexString()),
     }));
 
     return Response.json({ negotiations });
