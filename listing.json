@@ -1,0 +1,36 @@
+{
+  "title": "Central Asia E-Commerce Orders — Q1 2026",
+  "summary": "Daily e-commerce order data across Kazakhstan, Uzbekistan, and Kyrgyzstan for Q1 2026. Includes order value, product category, payment method, delivery status, and customer city. Useful for market entry analysis, logistics planning, and regional demand forecasting.",
+  "validFrom": "2026-01-01",
+  "validTo": "2026-12-31",
+  "regions": ["Kazakhstan", "Uzbekistan", "Kyrgyzstan", "Central Asia"],
+  "columns": ["date", "country", "city", "category", "orders", "gmv_usd", "avg_order_value_usd", "payment_method", "delivery_status", "return_rate"],
+  "industry": "Retail",
+  "dataType": "time_series",
+  "askingPrice": "280",
+  "askingCurrency": "USDC",
+  "sampleRow": {
+    "date": "2026-01-05",
+    "country": "Kazakhstan",
+    "city": "Almaty",
+    "category": "Electronics",
+    "orders": 1840,
+    "gmv_usd": 276000,
+    "avg_order_value_usd": 150,
+    "payment_method": "card",
+    "delivery_status": "delivered",
+    "return_rate": 0.04
+  },
+  "fullPayload": [
+    { "date": "2026-01-05", "country": "Kazakhstan",  "city": "Almaty",       "category": "Electronics",   "orders": 1840, "gmv_usd": 276000, "avg_order_value_usd": 150, "payment_method": "card",        "delivery_status": "delivered", "return_rate": 0.04 },
+    { "date": "2026-01-05", "country": "Uzbekistan",  "city": "Tashkent",     "category": "Apparel",       "orders": 2310, "gmv_usd": 115500, "avg_order_value_usd": 50,  "payment_method": "cash_on_delivery", "delivery_status": "delivered", "return_rate": 0.09 },
+    { "date": "2026-01-05", "country": "Kyrgyzstan",  "city": "Bishkek",      "category": "Home & Garden", "orders": 620,  "gmv_usd": 43400,  "avg_order_value_usd": 70,  "payment_method": "card",        "delivery_status": "delivered", "return_rate": 0.03 },
+    { "date": "2026-01-12", "country": "Kazakhstan",  "city": "Nur-Sultan",   "category": "Apparel",       "orders": 1540, "gmv_usd": 92400,  "avg_order_value_usd": 60,  "payment_method": "card",        "delivery_status": "delivered", "return_rate": 0.07 },
+    { "date": "2026-01-12", "country": "Uzbekistan",  "city": "Samarkand",    "category": "Electronics",   "orders": 870,  "gmv_usd": 130500, "avg_order_value_usd": 150, "payment_method": "cash_on_delivery", "delivery_status": "in_transit","return_rate": 0.05 },
+    { "date": "2026-01-19", "country": "Kazakhstan",  "city": "Almaty",       "category": "Beauty",        "orders": 2100, "gmv_usd": 63000,  "avg_order_value_usd": 30,  "payment_method": "mobile_wallet","delivery_status": "delivered", "return_rate": 0.02 },
+    { "date": "2026-01-19", "country": "Uzbekistan",  "city": "Tashkent",     "category": "Home & Garden", "orders": 1380, "gmv_usd": 96600,  "avg_order_value_usd": 70,  "payment_method": "card",        "delivery_status": "delivered", "return_rate": 0.04 },
+    { "date": "2026-02-02", "country": "Kyrgyzstan",  "city": "Osh",          "category": "Apparel",       "orders": 490,  "gmv_usd": 24500,  "avg_order_value_usd": 50,  "payment_method": "cash_on_delivery", "delivery_status": "delivered", "return_rate": 0.08 },
+    { "date": "2026-02-09", "country": "Kazakhstan",  "city": "Shymkent",     "category": "Electronics",   "orders": 930,  "gmv_usd": 139500, "avg_order_value_usd": 150, "payment_method": "card",        "delivery_status": "delivered", "return_rate": 0.05 },
+    { "date": "2026-02-16", "country": "Uzbekistan",  "city": "Tashkent",     "category": "Beauty",        "orders": 1760, "gmv_usd": 52800,  "avg_order_value_usd": 30,  "payment_method": "mobile_wallet","delivery_status": "delivered", "return_rate": 0.02 }
+  ]
+}

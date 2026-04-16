@@ -55,7 +55,7 @@ export async function POST(
       { $push: { events: { at: now, actor: "system", action: "data_released" } } }
     );
 
-    notifyDealParties({
+    await notifyDealParties({
       dealId: deal._id.toHexString(),
       buyerAgentId: deal.buyerAgentId,
       sellerAgentId: deal.sellerAgentId,

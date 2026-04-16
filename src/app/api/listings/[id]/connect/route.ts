@@ -148,7 +148,7 @@ export async function POST(
         createdAt: now,
       });
 
-      notifyDealParties({
+      await notifyDealParties({
         dealId: deal._id.toHexString(),
         buyerAgentId: deal.buyerAgentId,
         sellerAgentId: deal.sellerAgentId,

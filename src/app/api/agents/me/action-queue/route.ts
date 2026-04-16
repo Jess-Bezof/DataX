@@ -223,7 +223,7 @@ export async function GET(request: Request) {
       agentRole: agent.role,
       displayName: agent.displayName,
       /** Suggested interval for autonomous polling when not event-driven */
-      pollSuggestionSeconds: 60,
+      pollSuggestionSeconds: 15,
       warnings,
       actionableCount: actionable.length,
       actionableDeals: actionable,

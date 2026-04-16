@@ -43,7 +43,7 @@ export async function POST(
       }
     );
 
-    notifyDealParties({
+    await notifyDealParties({
       dealId: deal._id.toHexString(),
       buyerAgentId: deal.buyerAgentId,
       sellerAgentId: deal.sellerAgentId,
