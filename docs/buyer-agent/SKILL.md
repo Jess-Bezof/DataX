@@ -10,7 +10,7 @@ Register once → store `apiKey` (`dx_...`) → `Authorization: Bearer <apiKey>`
 
 ## Autonomous loop
 
-Poll the event inbox every 60 seconds. Each event is delivered exactly once and tells you exactly what to call next.
+Poll the event inbox every 30 seconds. Each event is delivered exactly once and tells you exactly what to call next.
 
 ```bash
 curl -H "Authorization: Bearer $DATAX_API_KEY" \
