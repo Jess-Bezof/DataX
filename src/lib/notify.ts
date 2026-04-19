@@ -1,6 +1,13 @@
 import { getDb } from "@/lib/mongo";
-import type { AgentDoc, DealStatus } from "@/types/datax";
+import type { AgentDoc, DealDoc, DealStatus, ListingDoc } from "@/types/datax";
 import type { ObjectId } from "mongodb";
+import { listPushTargetsForAgentTask } from "@/lib/a2a/push";
+import { fetchAgentCard, pickJsonRpcInterface, postStreamResponse } from "@/lib/a2a/client";
+import {
+  taskArtifactUpdateEvent,
+  taskStatusUpdateEvent,
+} from "@/lib/a2a/mapping";
+import type { A2AStreamResponse } from "@/lib/a2a/types";
 
 export type AgentEventDoc = {
   agentId: ObjectId;
@@ -207,8 +214,102 @@ export async function notifyDealParties(params: {
       }, sellerSecret));
     }
 
+    // A2A push notifications: best-effort, never block existing transports.
+    fires.push(fireA2APushes(db, id, params, buyer, seller));
+
     await Promise.all(fires);
   } catch {
     // Never surface errors from notifications
+  }
+}
+
+/**
+ * Build A2A StreamResponse payloads and POST them to every registered
+ * per-task push config (plus the externalAgentCardUrl fallback) for both
+ * sides of the deal. Silent on failures.
+ */
+async function fireA2APushes(
+  db: import("mongodb").Db,
+  dealId: string,
+  params: {
+    newStatus: DealStatus;
+  },
+  buyer: AgentDoc | null,
+  seller: AgentDoc | null
+): Promise<void> {
+  try {
+    const deal = await db
+      .collection<DealDoc>("deals")
+      .findOne({ _id: new (await import("mongodb")).ObjectId(dealId) });
+    if (!deal) return;
+
+    const payloads: A2AStreamResponse[] = [{ statusUpdate: taskStatusUpdateEvent(deal) }];
+
+    if (deal.status === "released") {
+      const listing = await db
+        .collection<ListingDoc>("listings")
+        .findOne({ _id: deal.listingId });
+      // We don't know the marketplace baseUrl from inside notify; use env or fall back.
+      const baseUrl =
+        process.env.A2A_BASE_URL ||
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        "";
+      const art = taskArtifactUpdateEvent(deal, listing, baseUrl.replace(/\/$/, ""));
+      if (art) payloads.push({ artifactUpdate: art });
+    }
+
+    const jobs: Promise<unknown>[] = [];
+    for (const [agent, role] of [
+      [buyer, "buyer"] as const,
+      [seller, "seller"] as const,
+    ]) {
+      if (!agent) continue;
+
+      // Per-task push configs registered by this agent.
+      try {
+        const targets = await listPushTargetsForAgentTask(db, agent._id, dealId);
+        for (const target of targets) {
+          for (const payload of payloads) {
+            jobs.push(
+              postStreamResponse(
+                target.url,
+                payload,
+                target.token ? { type: "bearer", token: target.token } : { type: "none" },
+                dealId
+              )
+            );
+          }
+        }
+      } catch (e) {
+        console.warn(`[notify/a2a] listPushTargetsForAgentTask failed for ${role}:`, e instanceof Error ? e.message : e);
+      }
+
+      // externalAgentCardUrl fallback when no per-task config is set.
+      const cardUrl = (agent as (AgentDoc & { externalAgentCardUrl?: string })).externalAgentCardUrl?.trim();
+      const cardToken = (agent as (AgentDoc & { a2aDefaultPushToken?: string })).a2aDefaultPushToken?.trim();
+      if (cardUrl) {
+        jobs.push(
+          (async () => {
+            const card = await fetchAgentCard(cardUrl);
+            if (!card) return;
+            const iface = pickJsonRpcInterface(card);
+            if (!iface) return;
+            for (const payload of payloads) {
+              await postStreamResponse(
+                iface.url,
+                payload,
+                cardToken
+                  ? { type: "bearer", token: cardToken }
+                  : { type: "none" },
+                dealId
+              );
+            }
+          })()
+        );
+      }
+    }
+    await Promise.all(jobs);
+  } catch (e) {
+    console.warn("[notify/a2a] fireA2APushes failed:", e instanceof Error ? e.message : e);
   }
 }

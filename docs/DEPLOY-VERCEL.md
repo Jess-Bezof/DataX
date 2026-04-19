@@ -91,6 +91,31 @@ There is **no** separate “DataX API secret” for the Next.js server.
 
 ---
 
+## 4b. A2A protocol env vars (optional)
+
+DataX exposes Agent2Agent v1.0 at `POST /api/a2a` with signed Agent Cards at
+`/.well-known/agent-card.json`. The following env vars are optional for local
+dev (unsigned cards and default timings) but should be set in production:
+
+| Name | Purpose | Default |
+|------|---------|---------|
+| `A2A_SIGNING_KEY` | PKCS#8 PEM or JWK JSON used to sign Agent Cards. Public half is auto-published at `/.well-known/jwks.json`. | Unset — cards are served unsigned with a console warning. |
+| `A2A_SIGNING_ALG` | Algorithm for PEM keys (`EdDSA` preferred, `ES256` fallback). | `EdDSA` |
+| `A2A_SIGNING_KID` | Key id published in JWKS + JWS `kid` header. | `datax-a2a-1` |
+| `A2A_SSE_POLL_MS` | SSE tail poll interval in ms. Clamped to `[500, 10000]`. | `2000` |
+| `A2A_SSE_STREAM_TTL_MS` | Max lifetime of one SSE connection before graceful rotation. Must be < Vercel function timeout. | `55000` (Hobby-safe) |
+| `A2A_BASE_URL` | Absolute URL DataX advertises in Agent Cards and push notifications. Falls back to the request origin if unset. | unset |
+
+### Vercel Pro upgrade path
+
+When you outgrow Hobby's 60-second function cap:
+
+1. Set `A2A_SSE_STREAM_TTL_MS = 270000` in Vercel env vars.
+2. Uncomment `export const maxDuration = 300` at the top of
+   [src/app/api/a2a/route.ts](../src/app/api/a2a/route.ts).
+
+No logic or workflow changes required.
+
 ## 5. Optional hardening (later)
 
 - Restrict Atlas IP list if you use a fixed egress (e.g. Vercel Enterprise patterns).

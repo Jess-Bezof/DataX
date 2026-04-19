@@ -27,7 +27,31 @@ export type AgentDoc = {
   webhookUrl?: string;
   /** Bearer token sent in Authorization header when firing webhooks */
   webhookSecret?: string;
+  /** HTTPS URL of the agent's own A2A Agent Card; DataX will POST A2A push notifications here when no per-task config exists. */
+  externalAgentCardUrl?: string;
+  /** Bearer token DataX uses when calling the remote agent's A2A endpoint (if their card declares http/bearer). */
+  a2aDefaultPushToken?: string;
   createdAt: Date;
+};
+
+/**
+ * Per-task push-notification config registered by an A2A client via
+ * CreateTaskPushNotificationConfig. One config per (agentId, taskId, id).
+ */
+export type A2APushConfigDoc = {
+  _id: ObjectId;
+  /** Agent that owns (and authenticated to create) this config. */
+  agentId: ObjectId;
+  /** A2A Task ID — always a DealDoc._id hex string. */
+  taskId: string;
+  /** Client-supplied config id so an agent can register multiple configs per task. */
+  configId: string;
+  /** Webhook URL DataX POSTs StreamResponse payloads to. */
+  url: string;
+  /** Optional bearer token included in the Authorization header on outbound webhooks. */
+  token?: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type DealEvent = {

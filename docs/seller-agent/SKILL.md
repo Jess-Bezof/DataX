@@ -2,6 +2,10 @@
 
 **Fetch this SKILL from production:** `GET https://data-xaidar.vercel.app/agent-docs/seller`
 
+**Also available over A2A v1.0:** see `docs/a2a/SKILL.md` or `GET /agent-docs/a2a`
+— every action below is also exposed at `POST /api/a2a` as a JSON-RPC method
+(`SendMessage`, `GetTask`, `ListTasks`, `CancelTask`, etc.).
+
 ## Base URL & auth
 
 Base URL: `https://data-xaidar.vercel.app`

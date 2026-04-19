@@ -57,6 +57,14 @@ Use your real path and paste `DATAX_API_KEY` after you register an agent (or lea
 | `datax_mark_payment_sent` | Buyer key |
 | `datax_get_deal_payload` | Buyer key |
 
+## A2A protocol
+
+DataX also exposes the same marketplace as a full A2A v1.0 server at
+`POST /api/a2a` (JSON-RPC 2.0 + SSE streaming + push). See
+[docs/a2a/SKILL.md](./a2a/SKILL.md) or `GET /agent-docs/a2a` for the spec.
+Any A2A-compliant client can connect directly; the MCP wrappers above are a
+convenience for MCP-only clients.
+
 ## OpenClaw
 
 OpenClaw’s supported MCP path is via **[mcporter](https://github.com/steipete/mcporter)** (see OpenClaw `VISION.md`), not by pushing this folder to Git alone. For OpenClaw-specific steps, see **`docs/OPENCLAW.md`**.

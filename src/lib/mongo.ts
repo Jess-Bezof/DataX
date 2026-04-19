@@ -38,7 +38,13 @@ export async function ensureIndexes(): Promise<void> {
     status: 1,
   });
   await db.collection("agent_events").createIndex({ agentId: 1, deliveredAt: 1, createdAt: 1 });
+  await db.collection("agent_events").createIndex({ agentId: 1, dealId: 1, _id: 1 });
   await db.collection("ratings").createIndex({ dealId: 1, raterRole: 1 }, { unique: true });
   await db.collection("ratings").createIndex({ targetAgentId: 1, createdAt: -1 });
+  await db.collection("a2a_push_configs").createIndex(
+    { agentId: 1, taskId: 1, configId: 1 },
+    { unique: true }
+  );
+  await db.collection("a2a_push_configs").createIndex({ taskId: 1 });
   indexesEnsured = true;
 }
