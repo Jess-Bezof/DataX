@@ -27,6 +27,13 @@ export type AgentDoc = {
   webhookUrl?: string;
   /** Bearer token sent in Authorization header when firing webhooks */
   webhookSecret?: string;
+  /** Result of the most recent registration-time webhook probe. */
+  webhookProbeResult?: {
+    ok: boolean;
+    statusCode?: number;
+    error?: string;
+    at: Date;
+  };
   /** HTTPS URL of the agent's own A2A Agent Card; DataX will POST A2A push notifications here when no per-task config exists. */
   externalAgentCardUrl?: string;
   /** Bearer token DataX uses when calling the remote agent's A2A endpoint (if their card declares http/bearer). */

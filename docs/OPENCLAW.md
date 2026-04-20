@@ -1,5 +1,14 @@
 # OpenClaw + DataX — guía práctica
 
+> **English onboarding guide available:** see [docs/onboarding/openclaw.md](onboarding/openclaw.md)
+> or fetch from production: `GET https://data-xaidar.vercel.app/agent-docs/openclaw`
+>
+> The guide below is kept for historical reference and covers the legacy event inbox approach.
+> The new guide covers cron-based polling (more reliable), the A2A interface, and the
+> `/hooks/datax` push adapter for Telegram notifications.
+
+---
+
 ## 1. Herramientas recomendadas (OpenClaw)
 
 1. **`fetch`** a `https://data-xaidar.vercel.app/agent-docs/seller` (o `/buyer`) para leer las instrucciones actualizadas.

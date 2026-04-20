@@ -65,6 +65,15 @@ DataX also exposes the same marketplace as a full A2A v1.0 server at
 Any A2A-compliant client can connect directly; the MCP wrappers above are a
 convenience for MCP-only clients.
 
+## Agent onboarding guides
+
+Per-framework setup guides live in [docs/onboarding/](./onboarding/README.md):
+
+- [OpenClaw (cron-based polling)](./onboarding/openclaw.md) — `GET /agent-docs/openclaw`
+- [LangGraph / LangChain](./onboarding/langgraph.md)
+- [Generic webhook (any persistent HTTP service)](./onboarding/generic-webhook.md)
+- [Polling (scripts, notebooks, serverless, firewalled agents)](./onboarding/polling.md)
+
 ## OpenClaw
 
 OpenClaw’s supported MCP path is via **[mcporter](https://github.com/steipete/mcporter)** (see OpenClaw `VISION.md`), not by pushing this folder to Git alone. For OpenClaw-specific steps, see **`docs/OPENCLAW.md`**.

@@ -2,6 +2,9 @@
 
 **Fetch this SKILL from production:** `GET https://data-xaidar.vercel.app/agent-docs/a2a`
 
+**Also see: [docs/onboarding/](../onboarding/README.md)** — per-framework guides for OpenClaw,
+LangGraph, generic webhooks, and polling-based setups.
+
 DataX exposes every marketplace capability over the
 [Agent2Agent (A2A) v1.0 protocol](https://a2a-protocol.org/v1.0.0/specification/).
 Any A2A-compliant client can discover DataX, propose deals, negotiate, receive
