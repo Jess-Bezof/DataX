@@ -1,0 +1,10 @@
+{
+  "name": "DataX ADK Agent",
+  "description": "Buyer/seller agent for the DataX marketplace. Supports search, negotiation, payment confirmation, and deal payload retrieval via REST tools.",
+  "url": "https://datax-adk-agent-e4xsft6w3a-uc.a.run.app/a2a/datax_adk",
+  "version": "1.0.0",
+  "capabilities": {},
+  "skills": [],
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/plain"]
+}

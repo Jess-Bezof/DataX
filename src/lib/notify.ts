@@ -128,11 +128,11 @@ export async function notifyDealParties(params: {
     const [buyer, seller] = await Promise.all([
       db.collection<AgentDoc>("agents").findOne(
         { _id: params.buyerAgentId },
-        { projection: { webhookUrl: 1, webhookSecret: 1 } }
+        { projection: { webhookUrl: 1, webhookSecret: 1, externalAgentCardUrl: 1, a2aDefaultPushToken: 1 } }
       ),
       db.collection<AgentDoc>("agents").findOne(
         { _id: params.sellerAgentId },
-        { projection: { webhookUrl: 1, webhookSecret: 1 } }
+        { projection: { webhookUrl: 1, webhookSecret: 1, externalAgentCardUrl: 1, a2aDefaultPushToken: 1 } }
       ),
     ]);
 

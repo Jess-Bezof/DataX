@@ -1,0 +1,110 @@
+# Build and deploy the DataX ADK agent to Cloud Run.
+#
+# Bootstrap (first run): registers POST /api/agents on DataX and creates Secret Manager
+# secret DATAX_API_KEY, then grants the default Cloud Run runtime SA secretAccessor.
+# Re-runs: if the secret already exists, registration is skipped (idempotent).
+#
+# Default LLM: OpenRouter (LiteLLM). Create secret OPENROUTER_API_KEY before deploy
+# (setup.sh can create it from $OPENROUTER_API_KEY when the secret is missing).
+#
+# Recommended: run ./setup.sh once (enables APIs + IAM), then it invokes this file.
+#
+# Cloud Run is deployed without --allow-unauthenticated. Callers must send an identity
+# token (see docs/DEPLOY-CLOUD-RUN.md). Grant roles/run.invoker to users or SAs that
+# should invoke the service.
+#
+# Manual prerequisites (if not using setup.sh):
+#   gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
+#     artifactregistry.googleapis.com secretmanager.googleapis.com
+#   Secrets: DATAX_API_KEY (bootstrap may create), OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN (create manually or via setup.sh)
+#   Grant Cloud Build SA roles/secretmanager.admin
+#
+# Manual run (from repo root):
+#   PROJECT_NUMBER=$(gcloud projects describe PROJECT_ID --format='value(projectNumber)')
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions=_REGION=us-central1,_SERVICE_NAME=datax-adk-agent,_PROJECT_NUMBER=$PROJECT_NUMBER .
+#
+substitutions:
+  _REGION: us-central1
+  _SERVICE_NAME: datax-adk-agent
+  _AR_REPO: cloud-run-source-deploy
+  _DATAX_URL: https://data-xaidar.vercel.app
+  _AGENT_ROLE: buyer
+  _AGENT_DISPLAY_NAME: DataX ADK Agent
+  _CRYPTO_WALLET: ""
+  _PROJECT_NUMBER: ""
+  _DATAX_ADK_MODEL: openrouter/openai/gpt-4o-mini
+
+steps:
+  - id: bootstrap-datadx-secret
+    name: python:3.12-slim
+    env:
+      - "PROJECT_ID=$PROJECT_ID"
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        pip install --no-cache-dir \
+          "google-cloud-secret-manager>=2.20.0" \
+          "google-auth>=2.29.0" \
+          "google-api-core>=2.18.0"
+        export DATAX_URL="$_DATAX_URL"
+        export AGENT_ROLE="$_AGENT_ROLE"
+        export AGENT_DISPLAY_NAME="$_AGENT_DISPLAY_NAME"
+        export CRYPTO_WALLET="$_CRYPTO_WALLET"
+        if [ -n "$_PROJECT_NUMBER" ]; then export PROJECT_NUMBER="$_PROJECT_NUMBER"; fi
+        python scripts/bootstrap_datax_secret.py
+
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$BUILD_ID
+      - -t
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:latest
+      - agent
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - $_SERVICE_NAME
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$BUILD_ID
+      - --region=$_REGION
+      - --platform=managed
+      - --no-allow-unauthenticated
+      - --set-env-vars=^@^GOOGLE_CLOUD_PROJECT=$PROJECT_ID@GOOGLE_CLOUD_LOCATION=$_REGION@GOOGLE_GENAI_USE_VERTEXAI=false@DATAX_URL=$_DATAX_URL@AGENT_ROLE=$_AGENT_ROLE@DATAX_ADK_MODEL=$_DATAX_ADK_MODEL@ADK_SERVE_WEB=false@ADK_ENABLE_A2A=true
+      - --set-secrets=DATAX_API_KEY=DATAX_API_KEY:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN:latest
+
+  - id: set-cloud-run-url
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        SERVICE_URL=$(gcloud run services describe $_SERVICE_NAME \
+          --region=$_REGION --project=$PROJECT_ID \
+          --format='value(status.url)')
+        echo "Service URL: $$SERVICE_URL"
+        gcloud run services update $_SERVICE_NAME \
+          --region=$_REGION --project=$PROJECT_ID \
+          --update-env-vars="CLOUD_RUN_URL=$$SERVICE_URL"
+
+images:
+  - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$BUILD_ID
+  - $_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY

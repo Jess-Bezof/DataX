@@ -9,6 +9,55 @@ import { parseCryptoWalletField } from "@/lib/validate";
 import { probeWebhookUrl, type WebhookProbeResult } from "@/lib/webhook-probe";
 import type { AgentDoc } from "@/types/datax";
 
+/** Read authenticated agent profile (safe fields only). */
+export async function GET(request: Request) {
+  try {
+    await ensureIndexes();
+    const db = await getDb();
+    const token = parseBearer(request.headers.get("authorization"));
+    const agent = await findAgentByApiKey(
+      db.collection<AgentDoc>("agents"),
+      token
+    );
+    if (!agent) throw new AuthError(401, "Missing or invalid API key");
+
+    const doc = await db.collection<AgentDoc>("agents").findOne(
+      { _id: agent._id },
+      {
+        projection: {
+          displayName: 1,
+          role: 1,
+          cryptoWallet: 1,
+          webhookUrl: 1,
+          webhookSecret: 1,
+          externalAgentCardUrl: 1,
+          a2aDefaultPushToken: 1,
+          telegramChatId: 1,
+        },
+      }
+    );
+
+    return Response.json({
+      displayName: doc?.displayName,
+      role: doc?.role,
+      cryptoWallet: doc?.cryptoWallet?.trim() || null,
+      webhookUrl: doc?.webhookUrl || null,
+      webhookSecret: doc?.webhookSecret ? "set" : null,
+      externalAgentCardUrl: doc?.externalAgentCardUrl || null,
+      a2aDefaultPushToken: doc?.a2aDefaultPushToken ? "set" : null,
+      telegramChatId: doc?.telegramChatId?.trim() || null,
+    });
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("MONGODB_URI")) {
+      return jsonError(503, "Database is not configured");
+    }
+    if (e instanceof AuthError) {
+      return jsonError(e.status, e.message);
+    }
+    return handleRouteError(e);
+  }
+}
+
 /** Update authenticated agent profile (cryptoWallet for sellers, webhookUrl for any role). */
 export async function PATCH(request: Request) {
   try {
@@ -27,11 +76,12 @@ export async function PATCH(request: Request) {
       !("webhookUrl" in body) &&
       !("webhookSecret" in body) &&
       !("externalAgentCardUrl" in body) &&
-      !("a2aDefaultPushToken" in body)
+      !("a2aDefaultPushToken" in body) &&
+      !("telegramChatId" in body)
     ) {
       return jsonError(
         400,
-        'Body must include "cryptoWallet" (sellers), "webhookUrl", "webhookSecret", "externalAgentCardUrl", and/or "a2aDefaultPushToken".'
+        'Body must include "cryptoWallet" (sellers), "webhookUrl", "webhookSecret", "externalAgentCardUrl", "a2aDefaultPushToken", and/or "telegramChatId".'
       );
     }
 
@@ -164,6 +214,32 @@ export async function PATCH(request: Request) {
       }
     }
 
+    // --- telegramChatId (operator Telegram chat for external agent notifications — any role) ---
+    if ("telegramChatId" in body) {
+      const tid = body.telegramChatId;
+      if (tid === "" || tid === null) {
+        await db.collection("agents").updateOne(
+          { _id: agent._id },
+          { $unset: { telegramChatId: "" } }
+        );
+      } else {
+        if (typeof tid !== "string") {
+          return jsonError(400, "telegramChatId must be a string or empty string to clear");
+        }
+        const trimmed = tid.trim();
+        if (!/^-?\d{1,32}$/.test(trimmed)) {
+          return jsonError(
+            400,
+            "telegramChatId must be digits only, optional leading - (Telegram chat id)"
+          );
+        }
+        await db.collection("agents").updateOne(
+          { _id: agent._id },
+          { $set: { telegramChatId: trimmed } }
+        );
+      }
+    }
+
     const updated = await db.collection<AgentDoc>("agents").findOne({
       _id: agent._id,
     });
@@ -176,6 +252,7 @@ export async function PATCH(request: Request) {
       webhookSecret: updated?.webhookSecret ? "set" : null,
       externalAgentCardUrl: updated?.externalAgentCardUrl || null,
       a2aDefaultPushToken: updated?.a2aDefaultPushToken ? "set" : null,
+      telegramChatId: updated?.telegramChatId?.trim() || null,
       ...(probeResult !== null ? { webhookProbe: probeResult } : {}),
       message: "Profile updated.",
     });

@@ -28,6 +28,9 @@ mcp/node_modules
 !.env.example
 .env*.local
 
+# local curl payloads (often contain webhook secrets)
+body.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -35,3 +38,9 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Python / ADK agent (agent/)
+agent/.venv/
+agent/**/__pycache__/
+agent/**/*.pyc
+agent/sessions.db

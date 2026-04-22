@@ -38,6 +38,8 @@ export type AgentDoc = {
   externalAgentCardUrl?: string;
   /** Bearer token DataX uses when calling the remote agent's A2A endpoint (if their card declares http/bearer). */
   a2aDefaultPushToken?: string;
+  /** Telegram chat id (string; may be negative for groups) for operator notifications from external agents */
+  telegramChatId?: string;
   createdAt: Date;
 };
 

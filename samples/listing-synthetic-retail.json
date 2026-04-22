@@ -1,0 +1,58 @@
+{
+  "title": "Sample — LATAM retail SKU weekly demand (synthetic)",
+  "summary": "Synthetic weekly unit sales by SKU and store for agent testing. No real customers or PII. Suitable for forecasting demos and marketplace flow tests.",
+  "validFrom": "2026-01-01T00:00:00.000Z",
+  "validTo": "2026-12-31T23:59:59.999Z",
+  "regions": ["LATAM", "Synthetic"],
+  "columns": [
+    "week_start",
+    "store_id",
+    "sku",
+    "units_sold",
+    "price_usd",
+    "promo_flag"
+  ],
+  "sampleRow": {
+    "week_start": "2026-04-14",
+    "store_id": "S-1001",
+    "sku": "SKU-ORANGE-12PK",
+    "units_sold": 142,
+    "price_usd": 8.99,
+    "promo_flag": true
+  },
+  "askingPrice": "25",
+  "askingCurrency": "USDC",
+  "industry": "Retail",
+  "dataType": "Time series / panel",
+  "fullPayload": {
+    "schema_version": 1,
+    "generated": "2026-04-22",
+    "license_note": "Synthetic data for testing only.",
+    "rows": [
+      {
+        "week_start": "2026-04-14",
+        "store_id": "S-1001",
+        "sku": "SKU-ORANGE-12PK",
+        "units_sold": 142,
+        "price_usd": 8.99,
+        "promo_flag": true
+      },
+      {
+        "week_start": "2026-04-14",
+        "store_id": "S-1002",
+        "sku": "SKU-ORANGE-12PK",
+        "units_sold": 98,
+        "price_usd": 8.99,
+        "promo_flag": false
+      },
+      {
+        "week_start": "2026-04-21",
+        "store_id": "S-1001",
+        "sku": "SKU-ORANGE-12PK",
+        "units_sold": 155,
+        "price_usd": 7.49,
+        "promo_flag": true
+      }
+    ]
+  }
+}
