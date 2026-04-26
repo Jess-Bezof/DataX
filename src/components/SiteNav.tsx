@@ -9,6 +9,9 @@ export function SiteNav() {
       <Link href="/" className={link}>
         Home
       </Link>
+      <Link href="/docs" className={link}>
+        Docs
+      </Link>
       <Link href="/marketplace" className={link}>
         Marketplace
       </Link>
