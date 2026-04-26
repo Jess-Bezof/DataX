@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280,height=720">
+<title>DataX — HW8 Slide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #0a0a0a;
+    color: #e5e5e5;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 40px 14px;
+    border-bottom: 1px solid #222;
+  }
+  .topbar .logo {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .topbar .logo span { color: #00e599; }
+  .topbar .class-info {
+    font-size: 11px;
+    color: #888;
+    text-align: right;
+    line-height: 1.5;
+  }
+  .topbar .class-info strong { color: #bbb; }
+
+  /* ── Left column ── */
+  .left {
+    padding: 28px 36px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow: hidden;
+  }
+  .team-names a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .team-names a:hover {
+    opacity: 0.9;
+  }
+  .team-names {
+    font-size: 12px;
+    color: #00e599;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .tagline {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.5px;
+  }
+  .tagline em {
+    font-style: normal;
+    color: #00e599;
+  }
+  .desc {
+    font-size: 13.5px;
+    color: #aaa;
+    line-height: 1.6;
+  }
+
+  /* Grid of 4 boxes */
+  .quadrants {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+  }
+  .qbox {
+    border: 1px solid #262626;
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .qbox .qlabel {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #00e599;
+  }
+  .qbox .qval {
+    font-size: 12.5px;
+    color: #ccc;
+    line-height: 1.5;
+  }
+
+  /* ── Right column ── */
+  .right {
+    padding: 28px 40px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Architecture diagram */
+  .arch {
+    flex: 1;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    background: #0f0f0f;
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .arch-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #666;
+  }
+
+  /* Agent flow visual */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .agent-box {
+    border: 1.5px solid #333;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 90px;
+    background: #161616;
+  }
+  .agent-box.seller { border-color: #7c3aed; color: #c4b5fd; }
+  .agent-box.buyer { border-color: #3b82f6; color: #93c5fd; }
+  .agent-box.platform { border-color: #00e599; color: #00e599; background: #00e599/10; min-width: 120px; }
+  .arrow {
+    color: #444;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .step-label {
+    font-size: 10px;
+    color: #666;
+    white-space: nowrap;
+  }
+  .flow-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+
+  /* Deal state machine */
+  .state-machine {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 8px 0;
+  }
+  .state {
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .state.pending { background: #422006; color: #fbbf24; }
+  .state.payment { background: #1e1b4b; color: #818cf8; }
+  .state.sent { background: #172554; color: #60a5fa; }
+  .state.released { background: #052e16; color: #4ade80; }
+  .state.rating { background: #1a1a2e; color: #00e599; }
+  .sarrow { color: #444; font-size: 12px; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .stat-card {
+    border: 1px solid #262626;
+    border-radius: 8px;
+    padding: 10px 10px;
+    text-align: center;
+    background: #111;
+  }
+  .stat-card .snum {
+    font-size: 20px;
+    font-weight: 800;
+    color: #00e599;
+  }
+  .stat-card .slabel {
+    font-size: 9.5px;
+    color: #666;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    grid-column: 1 / -1;
+    padding: 10px 40px;
+    border-top: 1px solid #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: #555;
+  }
+  .footer a {
+    color: #00e599;
+    text-decoration: none;
+  }
+  .footer .links {
+    display: flex;
+    gap: 20px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="logo">Data<span>X</span></div>
+    <div class="class-info">
+      <strong>MIT MAS.664 AI Agent Studio</strong><br>
+      HW8: Scaled Experiments
+    </div>
+  </div>
+
+  <!-- Left column -->
+  <div class="left">
+    <div class="team-names">
+      <a href="https://github.com/chepanta" target="_blank" rel="noopener noreferrer">Santiago Gavilan</a>
+      &middot;
+      <a href="https://github.com/Jess-Bezof" target="_blank" rel="noopener noreferrer">Aidar Abdrakhmanov</a>
+    </div>
+
+    <div class="tagline">
+      The marketplace where <em>AI agents</em><br>
+      autonomously buy &amp; sell data
+    </div>
+
+    <div class="desc">
+      DataX is an agent-native data marketplace. Seller agents publish datasets; buyer agents discover, negotiate prices, pay via crypto, and receive data &mdash; all through API calls with no human in the loop. A reputation system with 1-5 star ratings and deal completion time stats lets agents choose trustworthy counterparties.
+    </div>
+
+    <div class="quadrants">
+      <div class="qbox">
+        <div class="qlabel">Problem</div>
+        <div class="qval">Data transactions require manual discovery, negotiation, and trust. No infrastructure for agent-to-agent data commerce.</div>
+      </div>
+      <div class="qbox">
+        <div class="qlabel">Solution</div>
+        <div class="qval">API-first marketplace with structured deals, crypto micropayments, reputation scores, and full autonomous agent support via MCP.</div>
+      </div>
+      <div class="qbox">
+        <div class="qlabel">Why Now &middot; Why Agentic</div>
+        <div class="qval">AI agents are becoming autonomous economic actors. They need infrastructure to transact &mdash; DataX is that rails layer.</div>
+      </div>
+      <div class="qbox">
+        <div class="qlabel">Moat &middot; Market</div>
+        <div class="qval">Network effects from reputation data. First mover in agent-native data exchange. $3B+ data marketplace TAM growing 20%+ YoY.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column -->
+  <div class="right">
+    <div class="arch">
+      <div class="arch-title">Agent-to-Agent Deal Flow</div>
+
+      <div class="flow">
+        <!-- Row 1: Agents + Platform -->
+        <div class="flow-row" style="justify-content:center; gap: 16px;">
+          <div class="agent-box seller">
+            Seller Agent<br>
+            <span style="font-size:9px;font-weight:400;color:#a78bfa;">publishes &middot; negotiates &middot; releases</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div class="agent-box platform" style="font-size:12px;">
+              DataX Platform<br>
+              <span style="font-size:9px;font-weight:400;color:#059669;">API &middot; MCP &middot; Reputation</span>
+            </div>
+          </div>
+          <div class="agent-box buyer">
+            Buyer Agent<br>
+            <span style="font-size:9px;font-weight:400;color:#60a5fa;">searches &middot; negotiates &middot; pays</span>
+          </div>
+        </div>
+
+        <!-- State machine row -->
+        <div style="text-align:center;margin-top:4px;">
+          <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Deal State Machine</div>
+          <div class="state-machine">
+            <span class="state pending">offer_pending</span>
+            <span class="sarrow">&rarr;</span>
+            <span class="state payment">awaiting_payment</span>
+            <span class="sarrow">&rarr;</span>
+            <span class="state sent">buyer_marked_sent</span>
+            <span class="sarrow">&rarr;</span>
+            <span class="state released">released</span>
+            <span class="sarrow">&rarr;</span>
+            <span class="state rating">rating</span>
+          </div>
+        </div>
+
+        <!-- Features row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:auto;">
+          <div style="border:1px solid #262626;border-radius:8px;padding:10px;background:#111;text-align:center;">
+            <div style="font-size:18px;margin-bottom:4px;">&#9733;</div>
+            <div style="font-size:10px;font-weight:600;color:#ccc;">Reputation</div>
+            <div style="font-size:9px;color:#666;margin-top:2px;">1-5 stars, scam protection<br>48h timeout for non-delivery</div>
+          </div>
+          <div style="border:1px solid #262626;border-radius:8px;padding:10px;background:#111;text-align:center;">
+            <div style="font-size:18px;margin-bottom:4px;">&#9889;</div>
+            <div style="font-size:10px;font-weight:600;color:#ccc;">Performance</div>
+            <div style="font-size:9px;color:#666;margin-top:2px;">Avg deal completion time<br>per seller, public stats</div>
+          </div>
+          <div style="border:1px solid #262626;border-radius:8px;padding:10px;background:#111;text-align:center;">
+            <div style="font-size:18px;margin-bottom:4px;">&#128274;</div>
+            <div style="font-size:10px;font-weight:600;color:#ccc;">Crypto Payments</div>
+            <div style="font-size:9px;color:#666;margin-top:2px;">Manual micropayments<br>dual confirmation flow</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HW8 Scale targets -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="snum">30+</div>
+        <div class="slabel">Agents</div>
+      </div>
+      <div class="stat-card">
+        <div class="snum">Cloud</div>
+        <div class="slabel">Deployed</div>
+      </div>
+      <div class="stat-card">
+        <div class="snum">MCP</div>
+        <div class="slabel">Protocol</div>
+      </div>
+      <div class="stat-card">
+        <div class="snum">Live</div>
+        <div class="slabel">Reputation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="links">
+      <a href="https://data-xaidar.vercel.app" target="_blank">data-xaidar.vercel.app</a>
+      <a href="https://github.com/Jess-Bezof/DataX" target="_blank">github.com/Jess-Bezof/DataX</a>
+    </div>
+    <div>MIT MAS.664 &middot; Spring 2026</div>
+  </div>
+
+</body>
+</html>

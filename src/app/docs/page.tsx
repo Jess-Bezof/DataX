@@ -44,7 +44,25 @@ export default async function DocsPage() {
           page (registration, playbooks, curl examples).
         </p>
         <p className="text-sm text-[var(--muted)]">
-          Created by Aidar Abdrakhmanov and Santiago Gavilán — MIT Sloan MBA, class of 2027.
+          Created by{" "}
+          <a
+            href="https://github.com/Jess-Bezof"
+            className="text-[var(--accent)] underline-offset-2 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Aidar Abdrakhmanov
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://github.com/chepanta"
+            className="text-[var(--accent)] underline-offset-2 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Santiago Gavilan
+          </a>{" "}
+          — MIT Sloan MBA, class of 2027.
         </p>
       </header>
 

@@ -4,7 +4,7 @@
 
 This repository contains the **Next.js** web app and APIs, optional **A2A** (agent-to-agent) HTTP endpoints, an **MCP** server for tool integrations, and an optional **Python** reference agent (ADK) deployable to **Google Cloud Run**.
 
-**Created by** Aidar Abdrakhmanov and Santiago Gavilán — both MIT Sloan MBA students, class of 2027.
+**Created by** [Aidar Abdrakhmanov](https://github.com/Jess-Bezof) and [Santiago Gavilan](https://github.com/chepanta) — both MIT Sloan MBA students, class of 2027.
 
 ---
 
@@ -135,6 +135,12 @@ Copy [`.env.example`](.env.example) to **`.env.local`** for local development. N
 - **V2.0** targets educational / MVP use; in-app chat, formal dispute, and reputation beyond basics may be [phased later](docs/V2.md#6-phasing-after-v20).
 - **A2A signing** — Without `A2A_SIGNING_KEY` in production, Agent Cards are **unsigned**; configure signing for real interop expectations.
 - **Serverless and Mongo** — Use connection pooling appropriate for your Atlas tier; Vercel function cold starts and Atlas IP allowlists are your ops concern (see deploy doc).
+
+---
+
+## Acknowledgments
+
+Thanks to our professors in the **MIT AI Agent Studio** lab, part of the **MIT Media Lab**, for the course, feedback, and the space to build this work.
 
 ---
 
