@@ -17,6 +17,7 @@
 #   PROJECT_ID / GOOGLE_CLOUD_PROJECT  GCP project (non-interactive fallback)
 #   OPENROUTER_API_KEY                 creates Secret if missing (non-interactive or after prompt)
 #   AGENT_ROLE, AGENT_DISPLAY_NAME, CRYPTO_WALLET, DATAX_URL, DATAX_ADK_MODEL
+#   DATAX_SECRET_ID (optional; seller defaults to DATAX_SELLER_API_KEY, buyer to DATAX_API_KEY)
 #   SETUP_NON_INTERACTIVE=1            same as --non-interactive
 #
 # Requires: gcloud CLI, bash (Git Bash or WSL on Windows).
@@ -150,10 +151,18 @@ if [[ "${NON_INTERACTIVE}" != "true" ]]; then
     DATAX_ADK_MODEL="${_model_default}"
   fi
 
+  if [[ -z "${DATAX_SECRET_ID:-}" ]]; then
+    if [[ "${AGENT_ROLE}" == "seller" ]]; then
+      DATAX_SECRET_ID="DATAX_SELLER_API_KEY"
+    else
+      DATAX_SECRET_ID="DATAX_API_KEY"
+    fi
+  fi
+
   echo ""
   echo "Summary: project=${PROJECT_ID} region=${REGION} service=${SERVICE_NAME}"
   echo "         role=${AGENT_ROLE} displayName=${AGENT_DISPLAY_NAME}"
-  echo "         dataxUrl=${DATAX_URL} model=${DATAX_ADK_MODEL}"
+  echo "         dataxSecret=${DATAX_SECRET_ID} dataxUrl=${DATAX_URL} model=${DATAX_ADK_MODEL}"
   echo ""
   read -r -p "Continue with APIs, IAM, and Cloud Build? [Y/n]: " _go
   if [[ -n "${_go}" && ! "${_go}" =~ ^[Yy] ]]; then
@@ -179,6 +188,15 @@ else
   fi
 fi
 
+# Secret Manager id for this deployment's dx_ API key (must differ when buyer + seller share a project).
+if [[ -z "${DATAX_SECRET_ID:-}" ]]; then
+  if [[ "${AGENT_ROLE}" == "seller" ]]; then
+    DATAX_SECRET_ID="DATAX_SELLER_API_KEY"
+  else
+    DATAX_SECRET_ID="DATAX_API_KEY"
+  fi
+fi
+
 PROJECT_NUMBER="$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')"
 CB_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
 CR_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
@@ -186,6 +204,7 @@ CR_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 echo ""
 echo "Project: ${PROJECT_ID} (${PROJECT_NUMBER})"
 echo "Region:  ${REGION}  Service: ${SERVICE_NAME}  Role: ${AGENT_ROLE}"
+echo "DataX Secret Manager key: ${DATAX_SECRET_ID}"
 echo ""
 
 gcloud services enable \
@@ -251,6 +270,7 @@ SUBST+=",_AGENT_ROLE=${AGENT_ROLE},_AGENT_DISPLAY_NAME=${AGENT_DISPLAY_NAME}"
 SUBST+=",_CRYPTO_WALLET=${CRYPTO_WALLET}"
 SUBST+=",_DATAX_URL=${DATAX_URL}"
 SUBST+=",_DATAX_ADK_MODEL=${DATAX_ADK_MODEL}"
+SUBST+=",_DATAX_SECRET_ID=${DATAX_SECRET_ID}"
 
 echo "Starting Cloud Build (bootstrap + image + deploy)..."
 gcloud builds submit \

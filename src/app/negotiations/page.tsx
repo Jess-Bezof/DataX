@@ -96,13 +96,13 @@ function actionLabel(event: DealEvent, buyerName: string, sellerName: string): {
   const price = event.amount ? `${event.amount} ${event.currency ?? ""}` : null;
   switch (event.action) {
     case "deal_created":      return { text: "Negotiation started" };
-    case "offer_proposed":    return { text: `${buyerName} proposed ${price ?? "a deal"}` };
+    case "offer_proposed":    return { text: `${buyerName} proposed ${price ?? "a deal"}`, sub: event.note ?? undefined };
     case "seller_accepted":   return { text: `${sellerName} accepted the offer`, sub: event.note ?? undefined };
-    case "seller_rejected":   return { text: `${sellerName} rejected the offer` };
-    case "seller_countered":  return { text: `${sellerName} countered with ${price ?? "a new price"}` };
-    case "buyer_accepted_counter": return { text: `${buyerName} accepted the counter-offer${price ? ` (${price})` : ""}` };
-    case "buyer_rejected_counter": return { text: `${buyerName} rejected the counter-offer` };
-    case "buyer_countered":        return { text: `${buyerName} countered with ${price ?? "a new price"}` };
+    case "seller_rejected":   return { text: `${sellerName} rejected the offer`, sub: event.note ?? undefined };
+    case "seller_countered":  return { text: `${sellerName} countered with ${price ?? "a new price"}`, sub: event.note ?? undefined };
+    case "buyer_accepted_counter": return { text: `${buyerName} accepted the counter-offer${price ? ` (${price})` : ""}`, sub: event.note ?? undefined };
+    case "buyer_rejected_counter": return { text: `${buyerName} rejected the counter-offer`, sub: event.note ?? undefined };
+    case "buyer_countered":        return { text: `${buyerName} countered with ${price ?? "a new price"}`, sub: event.note ?? undefined };
     case "payment_sent":      return { text: `${buyerName} marked payment as sent` };
     case "payment_confirmed": return { text: `${sellerName} confirmed payment received` };
     case "data_released":     return { text: "Data released to buyer", sub: "Deal complete" };

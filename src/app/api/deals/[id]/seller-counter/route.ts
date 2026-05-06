@@ -47,6 +47,10 @@ export async function POST(
 
     const counterAmount = amt.trim().slice(0, 40);
     const counterCurrency = cur.trim().slice(0, 24);
+    const note =
+      typeof body.note === "string" && body.note.trim()
+        ? body.note.trim().slice(0, 500)
+        : undefined;
 
     const now = new Date();
     await ddb.collection<DealDoc>("deals").updateOne(
@@ -58,7 +62,7 @@ export async function POST(
           counterCurrency,
           updatedAt: now,
         },
-        $push: { events: { at: now, actor: "seller", action: "seller_countered", amount: counterAmount, currency: counterCurrency } },
+        $push: { events: { at: now, actor: "seller", action: "seller_countered", amount: counterAmount, currency: counterCurrency, ...(note ? { note } : {}) } },
       }
     );
 
@@ -69,6 +73,7 @@ export async function POST(
       newStatus: "seller_counter_pending",
       counterAmount,
       counterCurrency,
+      note,
     });
 
     return Response.json({

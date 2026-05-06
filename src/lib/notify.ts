@@ -17,6 +17,7 @@ export type AgentEventDoc = {
   status: DealStatus;
   counterAmount?: string;
   counterCurrency?: string;
+  note?: string;
   agreedAmount?: string;
   agreedCurrency?: string;
   sellerCryptoWallet?: string;
@@ -34,6 +35,7 @@ type NotifyPayload = {
   yourRole: "buyer" | "seller";
   counterAmount?: string;
   counterCurrency?: string;
+  note?: string;
   agreedAmount?: string;
   agreedCurrency?: string;
   sellerCryptoWallet?: string;
@@ -119,6 +121,7 @@ export async function notifyDealParties(params: {
   newStatus: DealStatus;
   counterAmount?: string;
   counterCurrency?: string;
+  note?: string;
   agreedAmount?: string;
   agreedCurrency?: string;
   sellerCryptoWallet?: string;
@@ -159,6 +162,7 @@ export async function notifyDealParties(params: {
         status: s,
         counterAmount: params.counterAmount,
         counterCurrency: params.counterCurrency,
+        note: params.note,
         agreedAmount: params.agreedAmount,
         agreedCurrency: params.agreedCurrency,
         sellerCryptoWallet: params.sellerCryptoWallet,
@@ -176,6 +180,7 @@ export async function notifyDealParties(params: {
         status: s,
         counterAmount: params.counterAmount,
         counterCurrency: params.counterCurrency,
+        note: params.note,
         agreedAmount: params.agreedAmount,
         agreedCurrency: params.agreedCurrency,
         nextHttp: buildNextHttp("seller", id, s),
@@ -193,6 +198,7 @@ export async function notifyDealParties(params: {
         yourRole: "buyer",
         counterAmount: params.counterAmount,
         counterCurrency: params.counterCurrency,
+        note: params.note,
         agreedAmount: params.agreedAmount,
         agreedCurrency: params.agreedCurrency,
         sellerCryptoWallet: params.sellerCryptoWallet,
@@ -208,6 +214,7 @@ export async function notifyDealParties(params: {
         yourRole: "seller",
         counterAmount: params.counterAmount,
         counterCurrency: params.counterCurrency,
+        note: params.note,
         agreedAmount: params.agreedAmount,
         agreedCurrency: params.agreedCurrency,
         nextHttp: buildNextHttp("seller", id, s),

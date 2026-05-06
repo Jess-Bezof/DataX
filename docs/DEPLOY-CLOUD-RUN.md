@@ -121,14 +121,44 @@ You can still pre-set environment variables in interactive mode to skip individu
 What happens:
 
 1. **`setup.sh`** enables APIs, ensures Artifact Registry repo `cloud-run-source-deploy`, grants IAM to the Cloud Build and Cloud Run service accounts.
-2. **`cloudbuild.yaml`** runs **`scripts/bootstrap_datax_secret.py`**: if Secret Manager secret `DATAX_API_KEY` does **not** exist, it calls `POST /api/agents` on DataX, saves the returned key into that secret, and tries to grant the default Cloud Run runtime account `secretAccessor` on it. If the secret **already** exists, registration is **skipped** (safe to re-run deploys). Some org policies block `setIamPolicy` from the Cloud Build service account: the script then checks whether the binding already exists; if not, it prints a one-line `gcloud secrets add-iam-policy-binding` for a project owner to run, then fails the build until that is done.
-3. Build pushes the container and deploys Cloud Run **without** public (`allUsers`) access, with `--set-secrets=DATAX_API_KEY=DATAX_API_KEY:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest` and `GOOGLE_GENAI_USE_VERTEXAI=false`. Grant yourself `roles/run.invoker` and use an identity token (see **Cloud Run access** above).
+2. **`cloudbuild.yaml`** runs **`scripts/bootstrap_datax_secret.py`**: if the bootstrap secret (`_DATAX_SECRET_ID`, default `DATAX_API_KEY`) does **not** exist, it calls `POST /api/agents` on DataX, saves the returned key into that secret, and tries to grant the default Cloud Run runtime account `secretAccessor` on it. If the secret **already** exists, registration is **skipped** (safe to re-run deploys). For a **seller** beside an existing buyer, Cloud Build passes `_DATAX_SECRET_ID=DATAX_SELLER_API_KEY` so a second agent and secret are created. Some org policies block `setIamPolicy` from the Cloud Build service account: the script then checks whether the binding already exists; if not, it prints a one-line `gcloud secrets add-iam-policy-binding` for a project owner to run, then fails the build until that is done.
+3. Build pushes the container and deploys Cloud Run **without** public (`allUsers`) access, with `--set-secrets=DATAX_API_KEY=<_DATAX_SECRET_ID>:latest,...` (`DATAX_API_KEY` is always the **env var name** inside the container), OpenRouter/Telegram as configured, and `GOOGLE_GENAI_USE_VERTEXAI=false`. Grant yourself `roles/run.invoker` and use an identity token (see **Cloud Run access** above).
 
-To **register a new** DataX agent for the same GCP project, delete the secret first (this cannot be undone for the old key):
+To **redo** bootstrap for the same substitution (destructive):
 
 ```bash
-gcloud secrets delete DATAX_API_KEY --project=YOUR_PROJECT_ID
+gcloud secrets delete DATAX_SECRET_ID_YOU_USED --project=YOUR_PROJECT_ID
 ```
+
+## Seller agent (same GCP project as buyer)
+
+Deploy a **second** Cloud Run service with `AGENT_ROLE=seller` without touching `DATAX_API_KEY`:
+
+From the repo root (Git Bash / WSL / Linux / macOS), with `gcloud auth login` and `PROJECT_ID` set (or default project):
+
+```bash
+export PROJECT_ID=your-gcp-project
+export CRYPTO_WALLET=0x...          # recommended at registration time
+chmod +x setup.sh scripts/deploy-seller-adk.sh    # once
+./scripts/deploy-seller-adk.sh us-central1 datax-adk-seller
+```
+
+This sets `DATAX_SECRET_ID=DATAX_SELLER_API_KEY`, runs `./setup.sh --non-interactive`, and bootstrap registers a seller on DataX if `DATAX_SELLER_API_KEY` does not exist yet.
+
+**Non-interactive one-liner** (equivalent):
+
+```bash
+PROJECT_NUMBER=$(gcloud projects describe PROJECT_ID --format='value(projectNumber)')
+gcloud builds submit --config cloudbuild.yaml \
+  --substitutions=_REGION=us-central1,_SERVICE_NAME=datax-adk-seller,_AGENT_ROLE=seller,\
+_DATAX_SECRET_ID=DATAX_SELLER_API_KEY,_AGENT_DISPLAY_NAME=DataX%20ADK%20Seller,\
+_CRYPTO_WALLET=0xYOUR_WALLET,_PROJECT_NUMBER=$PROJECT_NUMBER,\
+_DATAX_URL=https://data-xaidar.vercel.app .
+```
+
+(URL-encode spaces in display name when passing via `gcloud` substitutions, or use `setup.sh` which avoids encoding issues.)
+
+After deploy, invoke the seller service (identity token), then prompt the agent to **`register_a2a_push`** with its **`CLOUD_RUN_URL`** so DataX pushes deal events, and **`patch_my_profile`** if wallet was omitted at registration — same pattern as buyer.
 
 ## One-time GCP setup (manual alternative)
 
@@ -221,7 +251,7 @@ gcloud builds submit --config cloudbuild.yaml \
   --substitutions=_REGION=REGION,_SERVICE_NAME=datax-adk-agent,_PROJECT_NUMBER=$PROJECT_NUMBER .
 ```
 
-Override role, display name, model, or seller wallet via substitutions: `_AGENT_ROLE`, `_AGENT_DISPLAY_NAME`, `_CRYPTO_WALLET`, `_DATAX_URL`, `_DATAX_ADK_MODEL` (see `cloudbuild.yaml`).
+Override role, DataX secret id, display name, model, or seller wallet via substitutions: `_AGENT_ROLE`, `_DATAX_SECRET_ID`, `_AGENT_DISPLAY_NAME`, `_CRYPTO_WALLET`, `_DATAX_URL`, `_DATAX_ADK_MODEL` (see `cloudbuild.yaml`).
 
 Ensure Secret Manager has **`OPENROUTER_API_KEY`** before deploy (unless you changed the deploy step to use Gemini only).
 

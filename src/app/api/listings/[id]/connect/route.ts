@@ -63,6 +63,11 @@ export async function POST(
       return jsonError(400, "Invalid JSON body");
     }
 
+    const offerNote =
+      typeof body.note === "string" && body.note.trim()
+        ? body.note.trim().slice(0, 500)
+        : undefined;
+
     let proposal: { proposedAmount?: string; proposedCurrency?: string };
     try {
       proposal = parseDealProposal(body);
@@ -115,7 +120,7 @@ export async function POST(
       const initialEvents = hasProposal
         ? [
             { at: now, actor: "system", action: "deal_created" },
-            { at: now, actor: "buyer", action: "offer_proposed", amount: proposal.proposedAmount, currency: proposal.proposedCurrency },
+            { at: now, actor: "buyer", action: "offer_proposed", amount: proposal.proposedAmount, currency: proposal.proposedCurrency, ...(offerNote ? { note: offerNote } : {}) },
           ]
         : [
             { at: now, actor: "system", action: "deal_created" },
@@ -154,6 +159,7 @@ export async function POST(
         sellerAgentId: deal.sellerAgentId,
         newStatus: deal.status,
         ...(hasProposal ? { counterAmount: proposal.proposedAmount, counterCurrency: proposal.proposedCurrency } : {}),
+        note: offerNote,
         sellerCryptoWallet: deal.status === "awaiting_payment" ? seller.cryptoWallet?.trim() : undefined,
       });
     }

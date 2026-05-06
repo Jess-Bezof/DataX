@@ -1,8 +1,10 @@
 # Build and deploy the DataX ADK agent to Cloud Run.
 #
 # Bootstrap (first run): registers POST /api/agents on DataX and creates Secret Manager
-# secret DATAX_API_KEY, then grants the default Cloud Run runtime SA secretAccessor.
-# Re-runs: if the secret already exists, registration is skipped (idempotent).
+# secret _DATAX_SECRET_ID (default DATAX_API_KEY), then grants the runtime SA accessor.
+# Re-runs: if that secret already exists, registration is skipped (idempotent).
+# For a seller beside an existing buyer, use _DATAX_SECRET_ID=DATAX_SELLER_API_KEY so
+# bootstrap registers a second agent instead of skipping on DATAX_API_KEY.
 #
 # Default LLM: OpenRouter (LiteLLM). Create secret OPENROUTER_API_KEY before deploy
 # (setup.sh can create it from $OPENROUTER_API_KEY when the secret is missing).
@@ -22,7 +24,7 @@
 # Manual run (from repo root):
 #   PROJECT_NUMBER=$(gcloud projects describe PROJECT_ID --format='value(projectNumber)')
 #   gcloud builds submit --config cloudbuild.yaml \
-#     --substitutions=_REGION=us-central1,_SERVICE_NAME=datax-adk-agent,_PROJECT_NUMBER=$PROJECT_NUMBER .
+#     --substitutions=_REGION=us-central1,_SERVICE_NAME=datax-adk-seller,_AGENT_ROLE=seller,_DATAX_SECRET_ID=DATAX_SELLER_API_KEY,_PROJECT_NUMBER=$PROJECT_NUMBER .
 #
 substitutions:
   _REGION: us-central1
@@ -34,6 +36,7 @@ substitutions:
   _CRYPTO_WALLET: ""
   _PROJECT_NUMBER: ""
   _DATAX_ADK_MODEL: openrouter/openai/gpt-4o-mini
+  _DATAX_SECRET_ID: DATAX_API_KEY
 
 steps:
   - id: bootstrap-datadx-secret
@@ -53,6 +56,7 @@ steps:
         export AGENT_ROLE="$_AGENT_ROLE"
         export AGENT_DISPLAY_NAME="$_AGENT_DISPLAY_NAME"
         export CRYPTO_WALLET="$_CRYPTO_WALLET"
+        export DATAX_SECRET_ID="$_DATAX_SECRET_ID"
         if [ -n "$_PROJECT_NUMBER" ]; then export PROJECT_NUMBER="$_PROJECT_NUMBER"; fi
         python scripts/bootstrap_datax_secret.py
 
@@ -85,7 +89,7 @@ steps:
       - --platform=managed
       - --no-allow-unauthenticated
       - --set-env-vars=^@^GOOGLE_CLOUD_PROJECT=$PROJECT_ID@GOOGLE_CLOUD_LOCATION=$_REGION@GOOGLE_GENAI_USE_VERTEXAI=false@DATAX_URL=$_DATAX_URL@AGENT_ROLE=$_AGENT_ROLE@DATAX_ADK_MODEL=$_DATAX_ADK_MODEL@ADK_SERVE_WEB=false@ADK_ENABLE_A2A=true
-      - --set-secrets=DATAX_API_KEY=DATAX_API_KEY:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN:latest
+      - --set-secrets=DATAX_API_KEY=$_DATAX_SECRET_ID:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN:latest
 
   - id: set-cloud-run-url
     name: gcr.io/google.com/cloudsdktool/cloud-sdk

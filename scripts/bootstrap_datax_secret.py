@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """One-time: register on DataX and store dx_ API key in Secret Manager (idempotent).
 
-Runs in Cloud Build before deploy. If secret DATAX_API_KEY already exists, exits without
+Runs in Cloud Build before deploy. If the target secret already exists, exits without
 calling DataX again.
 
 Environment:
   PROJECT_ID (required)
+  DATAX_SECRET_ID (optional, default DATAX_API_KEY). Use a distinct id per Cloud Run
+    service when buyer and seller share one GCP project (e.g. DATAX_SELLER_API_KEY).
   DATAX_URL (optional, default production)
   AGENT_ROLE (optional, default buyer)
   AGENT_DISPLAY_NAME (optional)
@@ -17,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -27,7 +30,8 @@ from google.cloud import secretmanager
 from google.iam.v1 import policy_pb2
 import google.auth
 
-SECRET_ID = "DATAX_API_KEY"
+_DEFAULT_SECRET_ID = "DATAX_API_KEY"
+_SECRET_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,255}$")
 RUNTIME_SA_SUFFIX = "-compute@developer.gserviceaccount.com"
 ACCESSOR_ROLE = "roles/secretmanager.secretAccessor"
 
@@ -48,13 +52,15 @@ def _has_secret_accessor(
     return False
 
 
-def _print_manual_accessor_help(project_id: str, member: str) -> None:
+def _print_manual_accessor_help(
+    project_id: str, member: str, secret_id: str
+) -> None:
     sys.stderr.write(
         "Could not set IAM on the secret (org policy may deny "
         "secretmanager.secrets.setIamPolicy for the Cloud Build service account).\n\n"
         "Grant the Cloud Run runtime service account read access once, then re-run the "
         "build. Example (single line; PowerShell or bash):\n\n"
-        f"  gcloud secrets add-iam-policy-binding {SECRET_ID} "
+        f"  gcloud secrets add-iam-policy-binding {secret_id} "
         f'--project={project_id} --member="{member}" '
         f'--role="{ACCESSOR_ROLE}"\n\n'
     )
@@ -130,6 +136,17 @@ def main() -> None:
         sys.stderr.write("PROJECT_ID is required\n")
         sys.exit(1)
 
+    secret_id = (
+        os.environ.get("DATAX_SECRET_ID", _DEFAULT_SECRET_ID).strip()
+        or _DEFAULT_SECRET_ID
+    )
+    if not _SECRET_ID_RE.match(secret_id):
+        sys.stderr.write(
+            "Invalid DATAX_SECRET_ID: use only letters, digits, underscore, hyphen "
+            f"(1–255 chars). Got: {secret_id!r}\n"
+        )
+        sys.exit(1)
+
     base_url = os.environ.get(
         "DATAX_URL", "https://data-xaidar.vercel.app"
     ).rstrip("/")
@@ -141,11 +158,11 @@ def main() -> None:
 
     client = secretmanager.SecretManagerServiceClient()
     parent = f"projects/{project_id}"
-    secret_name = f"{parent}/secrets/{SECRET_ID}"
+    secret_name = f"{parent}/secrets/{secret_id}"
 
     try:
         client.get_secret(name=secret_name)
-        print(f"Secret {SECRET_ID} already exists; skipping DataX registration.")
+        print(f"Secret {secret_id} already exists; skipping DataX registration.")
         return
     except gexc.NotFound:
         pass
@@ -166,7 +183,7 @@ def main() -> None:
     secret = client.create_secret(
         request={
             "parent": parent,
-            "secret_id": SECRET_ID,
+            "secret_id": secret_id,
             "secret": {"replication": {"automatic": {}}},
         }
     )
@@ -176,7 +193,7 @@ def main() -> None:
             "payload": {"data": api_key.encode("utf-8")},
         }
     )
-    print(f"Created Secret Manager secret {SECRET_ID} (version added).")
+    print(f"Created Secret Manager secret {secret_id} (version added).")
 
     project_number = os.environ.get("PROJECT_NUMBER", "").strip()
     if not project_number:
@@ -194,10 +211,10 @@ def main() -> None:
                 return
         except gexc.PermissionDenied:
             pass
-        _print_manual_accessor_help(project_id, member)
+        _print_manual_accessor_help(project_id, member, secret_id)
         sys.exit(1)
     print(
-        f"Granted secretAccessor on {SECRET_ID} to "
+        f"Granted secretAccessor on {secret_id} to "
         f"{project_number}{RUNTIME_SA_SUFFIX}."
     )
 

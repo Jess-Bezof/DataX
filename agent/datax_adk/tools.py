@@ -97,8 +97,10 @@ def connect_to_listing(
     listing_id: str,
     proposed_amount: Optional[str] = None,
     proposed_currency: Optional[str] = None,
+    note: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Buyer: start or resume a deal on a listing. Send both proposed_amount and proposed_currency, or neither."""
+    """Buyer: start or resume a deal on a listing. Send both proposed_amount and proposed_currency, or neither.
+    Optionally include a note (max 500 chars) with your opening argument — the seller sees it alongside the offer."""
     body: dict[str, str] = {}
     if proposed_amount is not None:
         body["proposedAmount"] = proposed_amount
@@ -106,6 +108,8 @@ def connect_to_listing(
         body["proposedCurrency"] = proposed_currency
     if bool(proposed_amount) != bool(proposed_currency):
         return {"error": True, "message": "Send both proposed_amount and proposed_currency, or neither"}
+    if note:
+        body["note"] = note[:500]
     return _request("POST", f"/api/listings/{listing_id}/connect", json_body=body or None)
 
 
@@ -119,13 +123,12 @@ def buyer_reject_counter(deal_id: str) -> dict[str, Any]:
     return _request("POST", f"/api/deals/{deal_id}/buyer-reject-counter")
 
 
-def buyer_counter_offer(deal_id: str, counter_amount: str, counter_currency: str) -> dict[str, Any]:
-    """Buyer: send a counter offer."""
-    return _request(
-        "POST",
-        f"/api/deals/{deal_id}/buyer-counter",
-        json_body={"counterAmount": counter_amount, "counterCurrency": counter_currency},
-    )
+def buyer_counter_offer(deal_id: str, counter_amount: str, counter_currency: str, note: Optional[str] = None) -> dict[str, Any]:
+    """Buyer: send a counter offer. Optionally include a note (max 500 chars) explaining your reasoning — the seller sees it."""
+    body: dict[str, str] = {"counterAmount": counter_amount, "counterCurrency": counter_currency}
+    if note:
+        body["note"] = note[:500]
+    return _request("POST", f"/api/deals/{deal_id}/buyer-counter", json_body=body)
 
 
 def buyer_mark_payment_sent(deal_id: str) -> dict[str, Any]:
@@ -229,13 +232,12 @@ def seller_reject_offer(deal_id: str) -> dict[str, Any]:
     return _request("POST", f"/api/deals/{deal_id}/seller-reject")
 
 
-def seller_counter_offer(deal_id: str, counter_amount: str, counter_currency: str) -> dict[str, Any]:
-    """Seller: propose a counter amount."""
-    return _request(
-        "POST",
-        f"/api/deals/{deal_id}/seller-counter",
-        json_body={"counterAmount": counter_amount, "counterCurrency": counter_currency},
-    )
+def seller_counter_offer(deal_id: str, counter_amount: str, counter_currency: str, note: Optional[str] = None) -> dict[str, Any]:
+    """Seller: propose a counter amount. Optionally include a note (max 500 chars) justifying your price — the buyer sees it."""
+    body: dict[str, str] = {"counterAmount": counter_amount, "counterCurrency": counter_currency}
+    if note:
+        body["note"] = note[:500]
+    return _request("POST", f"/api/deals/{deal_id}/seller-counter", json_body=body)
 
 
 def seller_confirm_payment_received(deal_id: str) -> dict[str, Any]:
