@@ -274,21 +274,34 @@ async def datax_webhook(request: Request) -> Response:
     role = payload.get("yourRole", "buyer")
     counter_amount = payload.get("counterAmount")
     counter_currency = payload.get("counterCurrency")
+    note = payload.get("note")
     agreed_amount = payload.get("agreedAmount")
     agreed_currency = payload.get("agreedCurrency")
     seller_wallet = payload.get("sellerCryptoWallet")
+    next_http: list[dict] = payload.get("nextHttp") or []
 
-    parts = [f"DataX deal event received — dealId={deal_id}, status={status}, yourRole={role}."]
+    parts = [f"DataX deal event — dealId={deal_id}, status={status}, yourRole={role}."]
     if counter_amount and counter_currency:
-        parts.append(f"Counter offer: {counter_amount} {counter_currency}.")
+        parts.append(f"Counterparty's offer: {counter_amount} {counter_currency}.")
+    if note:
+        parts.append(f"Counterparty's argument: \"{note}\"")
     if agreed_amount and agreed_currency:
         parts.append(f"Agreed amount: {agreed_amount} {agreed_currency}.")
     if seller_wallet:
-        parts.append(f"Seller crypto wallet for payment: {seller_wallet}.")
+        parts.append(f"Seller crypto wallet: {seller_wallet}.")
+
+    # Surface available API actions so the agent doesn't need to call get_my_deals.
+    if next_http:
+        action_hints = [f"{h['method']} {h['path']}" + (f" ({h['note']})" if h.get("note") else "") for h in next_http]
+        parts.append("Available actions: " + "; ".join(action_hints) + ".")
+
     parts.append(
-        "Act on this deal event immediately according to your policy. "
-        "For seller_counter_pending: accept if reasonable, counter, or reject. "
-        "For awaiting_payment: report wallet and amount — do NOT call buyer_mark_payment_sent without operator confirmation. "
+        "Act immediately — do NOT call get_my_deals or get_my_listings to look up data already provided above. "
+        "Use only the information in this message to decide. "
+        "If counterparty's offer equals your last counter or is acceptable, call accept. "
+        "For seller_counter_pending: call buyer_accept_counter, buyer_reject_counter, or buyer_counter_offer. "
+        "For buyer_counter_pending or offer_pending: call seller_accept, seller_reject, or seller_counter_offer. "
+        "For awaiting_payment: report wallet and amount to operator — do NOT call buyer_mark_payment_sent without operator confirmation. "
         "For released: call get_deal_payload and summarise the dataset."
     )
     message_text = " ".join(parts)

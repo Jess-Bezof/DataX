@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteNav } from "@/components/SiteNav";
 import { StarDisplay } from "@/components/StarRating";
 import { NegotiationStepTracker } from "@/components/NegotiationStepTracker";
@@ -126,6 +126,7 @@ function ChatPanel({ dealId, onClose }: { dealId: string; onClose: () => void })
   const [detail, setDetail] = useState<DealDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -147,6 +148,10 @@ function ChatPanel({ dealId, onClose }: { dealId: string; onClose: () => void })
     const interval = setInterval(load, 8_000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [dealId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [detail?.events.length]);
 
   return (
     <>
@@ -240,6 +245,7 @@ function ChatPanel({ dealId, onClose }: { dealId: string; onClose: () => void })
               </div>
             );
           })}
+          <div ref={bottomRef} />
         </div>
 
         {/* Footer */}
