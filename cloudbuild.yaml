@@ -35,8 +35,11 @@ substitutions:
   _AGENT_DISPLAY_NAME: DataX ADK Agent
   _CRYPTO_WALLET: ""
   _PROJECT_NUMBER: ""
-  _DATAX_ADK_MODEL: openrouter/openai/gpt-4o-mini
+  _DATAX_ADK_MODEL: openrouter/deepseek/deepseek-chat
   _DATAX_SECRET_ID: DATAX_API_KEY
+  # Telegram bot token secret name — buyer uses TELEGRAM_BOT_TOKEN, seller uses TELEGRAM_BOT_TOKEN_SELLER.
+  # Override with _TELEGRAM_SECRET_ID=TELEGRAM_BOT_TOKEN_SELLER when deploying the seller.
+  _TELEGRAM_SECRET_ID: TELEGRAM_BOT_TOKEN
 
 steps:
   - id: bootstrap-datadx-secret
@@ -89,7 +92,7 @@ steps:
       - --platform=managed
       - --no-allow-unauthenticated
       - --set-env-vars=^@^GOOGLE_CLOUD_PROJECT=$PROJECT_ID@GOOGLE_CLOUD_LOCATION=$_REGION@GOOGLE_GENAI_USE_VERTEXAI=false@DATAX_URL=$_DATAX_URL@AGENT_ROLE=$_AGENT_ROLE@DATAX_ADK_MODEL=$_DATAX_ADK_MODEL@ADK_SERVE_WEB=false@ADK_ENABLE_A2A=true
-      - --set-secrets=DATAX_API_KEY=$_DATAX_SECRET_ID:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN:latest
+      - --set-secrets=DATAX_API_KEY=$_DATAX_SECRET_ID:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,TELEGRAM_BOT_TOKEN=$_TELEGRAM_SECRET_ID:latest
 
   - id: set-cloud-run-url
     name: gcr.io/google.com/cloudsdktool/cloud-sdk

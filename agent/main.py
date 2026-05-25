@@ -271,6 +271,25 @@ async def datax_webhook(request: Request) -> Response:
     if event != "deal_updated" or not deal_id:
         return Response(status_code=200)
 
+    # Guard: verify the deal's current status matches the webhook before invoking the agent.
+    # When multiple webhooks arrive simultaneously (deal moves through several states quickly),
+    # stale webhooks are dropped here instead of causing concurrent ADK session conflicts.
+    # Uses the public /events endpoint (no auth required) for a fast, direct lookup.
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(f"{_DATAX_URL}/api/deals/{deal_id}/events")
+        if r.status_code == 200:
+            current_status = r.json().get("status", "")
+            if current_status and current_status != status:
+                logger.info(
+                    "[webhook] dropping stale event dealId=%s webhook_status=%s current_status=%s",
+                    deal_id, status, current_status,
+                )
+                return Response(status_code=200)
+    except Exception as exc:
+        # If the status check fails, proceed anyway — better to risk a duplicate than to drop.
+        logger.warning("[webhook] status check failed for deal %s: %s", deal_id, exc)
+
     role = payload.get("yourRole", "buyer")
     counter_amount = payload.get("counterAmount")
     counter_currency = payload.get("counterCurrency")

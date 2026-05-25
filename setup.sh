@@ -67,7 +67,7 @@ DATAX_ADK_MODEL="${DATAX_ADK_MODEL:-}"
 OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
 TELEGRAM_BOT_TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 
-DEFAULT_MODEL="openrouter/openai/gpt-4o-mini"
+DEFAULT_MODEL="openrouter/deepseek/deepseek-chat"
 DEFAULT_DATAX_URL="https://data-xaidar.vercel.app"
 
 if [[ "${NON_INTERACTIVE}" != "true" ]]; then
@@ -107,7 +107,15 @@ if [[ "${NON_INTERACTIVE}" != "true" ]]; then
 
   if ! gcloud secrets describe TELEGRAM_BOT_TOKEN --project="${PROJECT_ID}" &>/dev/null; then
     if [[ -z "${TELEGRAM_BOT_TOKEN:-}" ]]; then
-      read -r -s -p "Telegram bot token (from @BotFather, leave blank to skip): " TELEGRAM_BOT_TOKEN
+      read -r -s -p "Telegram bot token for BUYER (from @BotFather, leave blank to skip): " TELEGRAM_BOT_TOKEN
+      echo ""
+    fi
+  fi
+
+  TELEGRAM_BOT_TOKEN_SELLER="${TELEGRAM_BOT_TOKEN_SELLER:-}"
+  if ! gcloud secrets describe TELEGRAM_BOT_TOKEN_SELLER --project="${PROJECT_ID}" &>/dev/null; then
+    if [[ -z "${TELEGRAM_BOT_TOKEN_SELLER:-}" ]]; then
+      read -r -s -p "Telegram bot token for SELLER (from @BotFather, leave blank to skip): " TELEGRAM_BOT_TOKEN_SELLER
       echo ""
     fi
   fi
@@ -197,6 +205,15 @@ if [[ -z "${DATAX_SECRET_ID:-}" ]]; then
   fi
 fi
 
+# Secret Manager id for Telegram bot token (buyer uses TELEGRAM_BOT_TOKEN, seller uses TELEGRAM_BOT_TOKEN_SELLER).
+if [[ -z "${TELEGRAM_SECRET_ID:-}" ]]; then
+  if [[ "${AGENT_ROLE}" == "seller" ]]; then
+    TELEGRAM_SECRET_ID="TELEGRAM_BOT_TOKEN_SELLER"
+  else
+    TELEGRAM_SECRET_ID="TELEGRAM_BOT_TOKEN"
+  fi
+fi
+
 PROJECT_NUMBER="$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')"
 CB_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
 CR_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
@@ -265,12 +282,30 @@ else
   echo "Skipping TELEGRAM_BOT_TOKEN secret (not provided; Telegram bot will be disabled)."
 fi
 
+TELEGRAM_BOT_TOKEN_SELLER="${TELEGRAM_BOT_TOKEN_SELLER:-}"
+if gcloud secrets describe TELEGRAM_BOT_TOKEN_SELLER --project="${PROJECT_ID}" &>/dev/null; then
+  echo "Secret TELEGRAM_BOT_TOKEN_SELLER already exists."
+elif [[ -n "${TELEGRAM_BOT_TOKEN_SELLER:-}" ]]; then
+  echo "Creating secret TELEGRAM_BOT_TOKEN_SELLER (value not printed)..."
+  echo -n "${TELEGRAM_BOT_TOKEN_SELLER}" | gcloud secrets create TELEGRAM_BOT_TOKEN_SELLER \
+    --project="${PROJECT_ID}" \
+    --data-file=-
+  gcloud secrets add-iam-policy-binding TELEGRAM_BOT_TOKEN_SELLER \
+    --project="${PROJECT_ID}" \
+    --member="serviceAccount:${CR_SA}" \
+    --role="roles/secretmanager.secretAccessor" \
+    --condition=None
+else
+  echo "Skipping TELEGRAM_BOT_TOKEN_SELLER secret (not provided; seller Telegram bot will be disabled)."
+fi
+
 SUBST="_REGION=${REGION},_SERVICE_NAME=${SERVICE_NAME},_PROJECT_NUMBER=${PROJECT_NUMBER}"
 SUBST+=",_AGENT_ROLE=${AGENT_ROLE},_AGENT_DISPLAY_NAME=${AGENT_DISPLAY_NAME}"
 SUBST+=",_CRYPTO_WALLET=${CRYPTO_WALLET}"
 SUBST+=",_DATAX_URL=${DATAX_URL}"
 SUBST+=",_DATAX_ADK_MODEL=${DATAX_ADK_MODEL}"
 SUBST+=",_DATAX_SECRET_ID=${DATAX_SECRET_ID}"
+SUBST+=",_TELEGRAM_SECRET_ID=${TELEGRAM_SECRET_ID}"
 
 echo "Starting Cloud Build (bootstrap + image + deploy)..."
 gcloud builds submit \

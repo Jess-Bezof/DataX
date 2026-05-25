@@ -1,11 +1,16 @@
+"use client";
+
 import Link from "next/link";
+import { useIntroModal } from "@/components/intro/IntroModalContext";
 
 const link =
   "text-sm text-[var(--muted)] transition hover:text-[var(--accent)]";
 
 export function SiteNav() {
+  const { open } = useIntroModal();
+
   return (
-    <nav className="flex flex-wrap gap-4 border-b border-[var(--border)] pb-4">
+    <nav className="flex flex-wrap items-center gap-4 border-b border-[var(--border)] pb-4">
       <Link href="/" className={link}>
         Home
       </Link>
@@ -27,6 +32,14 @@ export function SiteNav() {
       <Link href="/buyer" className={link} title="Agent console (API key)">
         Buyer console
       </Link>
+      <button
+        type="button"
+        onClick={open}
+        className={`${link} ml-auto font-medium text-[var(--foreground)]/80`}
+        title="About DataX — what it does and how to connect agents"
+      >
+        About
+      </button>
     </nav>
   );
 }
