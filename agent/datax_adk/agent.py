@@ -25,7 +25,6 @@ _BUYER_TOOLS = [
     tools.buyer_accept_counter,
     tools.buyer_reject_counter,
     tools.buyer_counter_offer,
-    tools.buyer_mark_payment_sent,
     tools.get_deal_payload,
     tools.get_deal_payload_x402,
     tools.rate_counterparty_on_deal,
