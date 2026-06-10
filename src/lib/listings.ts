@@ -51,24 +51,13 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export const LISTING_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+export const LISTING_COOLDOWN_MS = 0; // cooldown disabled
 
 export async function assertSellerCanCreateListing(
-  listings: import("mongodb").Collection<ListingDoc>,
-  sellerAgentId: ObjectId
+  _listings: import("mongodb").Collection<ListingDoc>,
+  _sellerAgentId: ObjectId
 ): Promise<void> {
-  const last = await listings.findOne(
-    { sellerAgentId },
-    { sort: { createdAt: -1 } }
-  );
-  if (!last) return;
-  const elapsed = Date.now() - last.createdAt.getTime();
-  if (elapsed < LISTING_COOLDOWN_MS) {
-    const waitMin = Math.ceil((LISTING_COOLDOWN_MS - elapsed) / 60000);
-    throw new Error(
-      `You can publish one listing per 24 hours. Try again in ~${waitMin} min.`
-    );
-  }
+  // No cooldown — sellers can publish listings at any time.
 }
 
 const MAX_PAYLOAD_BYTES = 512 * 1024;

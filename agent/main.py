@@ -14,10 +14,10 @@ from google.adk.cli.fast_api import get_fast_api_app
 logger = logging.getLogger(__name__)
 
 _AGENT_ROOT = os.path.dirname(os.path.abspath(__file__))
-_SESSION_URI = os.environ.get(
-    "ADK_SESSION_URI",
-    "sqlite+aiosqlite:///./sessions.db",
-)
+# Default to in-memory sessions (None) so the ADK uses InMemorySessionService.
+# Set ADK_SESSION_URI to a SQLAlchemy URI (e.g. sqlite+aiosqlite:///./sessions.db)
+# to persist sessions across container restarts.
+_SESSION_URI = os.environ.get("ADK_SESSION_URI", "").strip() or None
 _ALLOW_ORIGINS = [
     o.strip()
     for o in os.environ.get("ADK_ALLOW_ORIGINS", "*").split(",")
@@ -107,6 +107,26 @@ async def _tg_send(chat_id: int | str, text: str) -> None:
     url = f"{_TELEGRAM_API}/bot{_TELEGRAM_TOKEN}/sendMessage"
     async with httpx.AsyncClient(timeout=10.0) as client:
         await client.post(url, json={"chat_id": chat_id, "text": text})
+
+
+async def _tg_download_document(file_id: str) -> str | None:
+    """Download a Telegram document by file_id and return its text contents, or None on failure."""
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        r = await client.get(
+            f"{_TELEGRAM_API}/bot{_TELEGRAM_TOKEN}/getFile",
+            params={"file_id": file_id},
+        )
+        if r.status_code != 200:
+            return None
+        file_path = r.json().get("result", {}).get("file_path")
+        if not file_path:
+            return None
+        dl = await client.get(
+            f"{_TELEGRAM_API}/file/bot{_TELEGRAM_TOKEN}/{file_path}"
+        )
+        if dl.status_code != 200:
+            return None
+        return dl.text
 
 
 async def _adk_ensure_session(user_id: str) -> str:
@@ -215,6 +235,21 @@ if _TELEGRAM_TOKEN:
 
         chat_id: int = message["chat"]["id"]
         text: str = (message.get("text") or "").strip()
+
+        # Handle file/document uploads — download and inject as listing JSON.
+        document = message.get("document")
+        if not text and document:
+            file_id: str = document.get("file_id", "")
+            file_name: str = document.get("file_name", "")
+            if not file_id:
+                await _tg_send(chat_id, "Could not read the file (missing file_id).")
+                return Response(status_code=200)
+            contents = await _tg_download_document(file_id)
+            if contents is None:
+                await _tg_send(chat_id, f"Failed to download '{file_name}'. Please try again.")
+                return Response(status_code=200)
+            text = f"Create a listing from this JSON file (filename: {file_name}):\n{contents}"
+
         if not text:
             return Response(status_code=200)
 

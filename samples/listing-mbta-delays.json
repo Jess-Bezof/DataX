@@ -1,0 +1,43 @@
+{
+  "title": "Boston MBTA Weekday Peak Delay Index — Q2 2026",
+  "summary": "Synthetic weekday peak-hour delay distributions for the Red, Green, Orange, and Blue lines, aggregated by station pair and week. Captures median and 90th-percentile delay minutes plus incident counts. Useful for real estate pricing agents, last-mile logistics routers, and corporate relocation assistants evaluating commute reliability.",
+  "validFrom": "2026-04-01",
+  "validTo": "2026-06-30",
+  "regions": ["Boston, MA", "Cambridge, MA", "Massachusetts", "New England"],
+  "columns": [
+    "week_start",
+    "line",
+    "station_from",
+    "station_to",
+    "direction",
+    "p50_delay_min",
+    "p90_delay_min",
+    "incident_count"
+  ],
+  "industry": "Transportation",
+  "dataType": "time_series",
+  "askingPrice": "0.1",
+  "askingCurrency": "USDC",
+  "sampleRow": {
+    "week_start": "2026-05-05",
+    "line": "Red",
+    "station_from": "Central",
+    "station_to": "Park Street",
+    "direction": "inbound",
+    "p50_delay_min": 2.1,
+    "p90_delay_min": 7.4,
+    "incident_count": 3
+  },
+  "fullPayload": [
+    { "week_start": "2026-04-07", "line": "Red",    "station_from": "Alewife",     "station_to": "Downtown Crossing", "direction": "inbound",  "p50_delay_min": 1.8, "p90_delay_min": 5.9,  "incident_count": 2 },
+    { "week_start": "2026-04-07", "line": "Green",  "station_from": "Lechmere",    "station_to": "Boylston",          "direction": "inbound",  "p50_delay_min": 3.4, "p90_delay_min": 10.2, "incident_count": 5 },
+    { "week_start": "2026-04-07", "line": "Orange", "station_from": "Oak Grove",   "station_to": "Back Bay",          "direction": "inbound",  "p50_delay_min": 2.6, "p90_delay_min": 8.1,  "incident_count": 4 },
+    { "week_start": "2026-04-14", "line": "Red",    "station_from": "Alewife",     "station_to": "Downtown Crossing", "direction": "inbound",  "p50_delay_min": 2.3, "p90_delay_min": 6.8,  "incident_count": 3 },
+    { "week_start": "2026-04-14", "line": "Blue",   "station_from": "Wonderland",  "station_to": "Government Center", "direction": "inbound",  "p50_delay_min": 1.2, "p90_delay_min": 3.5,  "incident_count": 1 },
+    { "week_start": "2026-04-21", "line": "Green",  "station_from": "Lechmere",    "station_to": "Boylston",          "direction": "inbound",  "p50_delay_min": 4.1, "p90_delay_min": 12.7, "incident_count": 7 },
+    { "week_start": "2026-04-21", "line": "Orange", "station_from": "Forest Hills","station_to": "Back Bay",          "direction": "inbound",  "p50_delay_min": 2.0, "p90_delay_min": 7.3,  "incident_count": 3 },
+    { "week_start": "2026-05-05", "line": "Red",    "station_from": "Central",     "station_to": "Park Street",       "direction": "inbound",  "p50_delay_min": 2.1, "p90_delay_min": 7.4,  "incident_count": 3 },
+    { "week_start": "2026-05-05", "line": "Green",  "station_from": "Kenmore",     "station_to": "Copley",            "direction": "outbound", "p50_delay_min": 1.5, "p90_delay_min": 4.8,  "incident_count": 2 },
+    { "week_start": "2026-05-12", "line": "Orange", "station_from": "Sullivan",    "station_to": "State",             "direction": "inbound",  "p50_delay_min": 3.2, "p90_delay_min": 9.6,  "incident_count": 5 }
+  ]
+}

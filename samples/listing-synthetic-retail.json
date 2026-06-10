@@ -20,7 +20,7 @@
     "price_usd": 8.99,
     "promo_flag": true
   },
-  "askingPrice": "25",
+  "askingPrice": "2",
   "askingCurrency": "USDC",
   "industry": "Retail",
   "dataType": "Time series / panel",

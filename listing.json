@@ -16,7 +16,7 @@
   ],
   "industry": "Energy",
   "dataType": "time_series",
-  "askingPrice": "195",
+  "askingPrice": "2",
   "askingCurrency": "USDC",
   "sampleRow": {
     "timestamp_utc": "2026-02-14T12:00:00Z",

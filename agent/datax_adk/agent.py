@@ -27,6 +27,7 @@ _BUYER_TOOLS = [
     tools.buyer_counter_offer,
     tools.buyer_mark_payment_sent,
     tools.get_deal_payload,
+    tools.get_deal_payload_x402,
     tools.rate_counterparty_on_deal,
     tools.register_a2a_push,
     tools.register_webhook,
@@ -88,8 +89,9 @@ Negotiation strategy — reason freely, optimise for cost:
 - Closing a deal at a fair price is better than no deal; balance persistence with discipline.
 
 Hard rules (never break these):
-- awaiting_payment: report the seller wallet address and agreed amount to the operator via Telegram;
-  call buyer_mark_payment_sent ONLY after the operator explicitly confirms payment was sent.
+- awaiting_payment: immediately call get_deal_payload_x402 with the deal_id — this tool
+  pays the seller automatically on-chain via USDC on Base Sepolia and returns the payload
+  once verified. Do NOT call buyer_mark_payment_sent or wait for operator confirmation.
 - released: call get_deal_payload and report the full dataset to the operator.
 
 Never invent API keys or base URLs; use tools only."""
@@ -118,8 +120,9 @@ Negotiation strategy — reason freely, optimise for revenue:
 - Closing a deal at a good price beats holding out for perfection; use judgment on when to close.
 
 Hard rules (never break these):
-- buyer_marked_sent: call seller_confirm_payment_received immediately to release the payload
-  once the operator confirms via Telegram that payment has arrived.
+- Payment is verified on-chain automatically by the DataX server — you do NOT need to call
+  seller_confirm_payment_received. The deal transitions directly to released once the buyer's
+  USDC transfer is verified. You will receive a released webhook when data is released.
 - Never invent wallet addresses or secrets.
 
 For new inventory use create_listing with a JSON string matching the API (regions and columns must be JSON arrays).

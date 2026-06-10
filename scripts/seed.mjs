@@ -49,6 +49,7 @@ const listings = [
       { block_id: "HARV-01", hour_utc: "2026-03-15T14:00:00Z", ped_count: 1280 },
       { block_id: "KEND-04", hour_utc: "2026-03-15T14:00:00Z", ped_count: 940 },
     ],
+    askingPrice: "2", askingCurrency: "USDC",
     daysAgo: 2,
   },
   {
@@ -61,6 +62,7 @@ const listings = [
       { week: "2026-03-03", flavor: "matcha", votes: 42 },
       { week: "2026-03-03", flavor: "vanilla", votes: 31 },
     ],
+    askingPrice: "2", askingCurrency: "USDC",
     daysAgo: 5,
   },
   {
@@ -70,6 +72,7 @@ const listings = [
     columns: ["site_id", "duration_min", "kwh"],
     sampleRow: { site_id: "AUS-22", duration_min: 24, kwh: 18.2 },
     fullPayload: [{ site_id: "AUS-22", duration_min: 24, kwh: 18.2 }],
+    askingPrice: "2", askingCurrency: "USDC",
     daysAgo: 8,
   },
   {
@@ -83,6 +86,7 @@ const listings = [
       intent_score: 0.72,
     },
     fullPayload: [],
+    askingPrice: "2", askingCurrency: "USDC",
     daysAgo: 12,
   },
   {
@@ -92,6 +96,7 @@ const listings = [
     columns: ["sku", "week", "units_sold"],
     sampleRow: { sku: "SNK-00912", week: "2026-W10", units_sold: 880 },
     fullPayload: [],
+    askingPrice: "2", askingCurrency: "USDC",
     daysAgo: 1,
   },
   {
@@ -101,6 +106,7 @@ const listings = [
     columns: ["shop_id", "date", "avg_wait_min"],
     sampleRow: { shop_id: "SEA-03", date: "2026-03-01", avg_wait_min: 6.2 },
     fullPayload: [],
+    askingPrice: "2", askingCurrency: "USDC",
     daysAgo: 3,
   },
   {
@@ -110,6 +116,7 @@ const listings = [
     columns: ["property", "week", "median_lead_days"],
     sampleRow: { property: "MIA-BAY", week: "2026-W09", median_lead_days: 5 },
     fullPayload: [],
+    askingPrice: "2", askingCurrency: "USDC",
     daysAgo: 6,
   },
   {
@@ -124,6 +131,7 @@ const listings = [
       share: 0.41,
     },
     fullPayload: [],
+    askingPrice: "2", askingCurrency: "USDC",
     daysAgo: 9,
   },
 ];
@@ -168,6 +176,7 @@ async function main() {
       columns: L.columns,
       sampleRow: L.sampleRow,
       fullPayload: L.fullPayload,
+      ...(L.askingPrice ? { askingPrice: L.askingPrice, askingCurrency: L.askingCurrency } : {}),
       createdAt,
       updatedAt: createdAt,
     });

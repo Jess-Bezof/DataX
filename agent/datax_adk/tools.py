@@ -141,6 +141,103 @@ def get_deal_payload(deal_id: str) -> dict[str, Any]:
     return _request("GET", f"/api/deals/{deal_id}/payload")
 
 
+def get_deal_payload_x402(deal_id: str) -> dict[str, Any]:
+    """Fetch full dataset for a deal, paying automatically via X402 if required.
+
+    If the deal is in awaiting_payment status, this tool:
+    1. Calls the payload endpoint — receives HTTP 402 with USDC payment requirements.
+    2. Sends the required USDC amount to the seller's wallet on Base Sepolia via CDP SDK.
+    3. Retries with the transaction hash as payment proof.
+    4. Returns the full dataset payload once the on-chain payment is verified.
+
+    Use this instead of get_deal_payload when the deal status is awaiting_payment.
+    """
+    url = f"{_base_url()}/api/deals/{deal_id}/payload"
+    headers: dict[str, str] = {"Authorization": f"Bearer {_api_key()}"}
+
+    # First attempt — may return 402
+    with httpx.Client(timeout=120.0) as client:
+        r = client.get(url, headers=headers)
+
+    if r.status_code == 200:
+        body = r.json()
+        return body if isinstance(body, dict) else {"result": body}
+
+    if r.status_code != 402:
+        try:
+            body = r.json()
+        except Exception:
+            body = {"raw": r.text}
+        return {"error": True, "status_code": r.status_code, "body": body}
+
+    # Parse payment requirements from 402 response
+    try:
+        requirements = r.json().get("paymentRequirements") or json.loads(
+            r.headers.get("x-payment-requirements", "{}")
+        )
+    except Exception:
+        return {"error": True, "message": "Could not parse payment requirements from 402"}
+
+    pay_to: str = requirements.get("payTo", "")
+    amount_atomic_str: str = requirements.get("maxAmountRequired", "0")
+
+    if not pay_to or not pay_to.startswith("0x"):
+        return {"error": True, "message": f"Invalid payTo address in requirements: {pay_to}"}
+
+    # Convert atomic USDC units (6 decimals) to human-readable
+    try:
+        amount_atomic = int(amount_atomic_str)
+        amount_usdc = amount_atomic / 10**6
+    except ValueError:
+        return {"error": True, "message": f"Invalid maxAmountRequired: {amount_atomic_str}"}
+
+    # Submit on-chain USDC payment via CDP SDK
+    try:
+        import asyncio
+        from cdp import CdpClient  # type: ignore
+
+        # USDC contract on Base Sepolia
+        USDC_CONTRACT = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+        BUYER_WALLET_NAME = os.environ.get("CDP_WALLET_NAME", "datax-buyer")
+
+        async def _pay() -> str:
+            async with CdpClient(
+                api_key_id=os.environ["CDP_API_KEY_ID"],
+                api_key_secret=os.environ["CDP_API_KEY_SECRET"],
+                wallet_secret=os.environ["CDP_WALLET_SECRET"],
+            ) as cdp:
+                account = await cdp.evm.get_or_create_account(name=BUYER_WALLET_NAME)
+                transfer = await account.transfer(
+                    to=pay_to,
+                    amount=amount_usdc,
+                    token=USDC_CONTRACT,
+                    network="base-sepolia",
+                )
+                result = await transfer.wait()
+                return result.transaction_hash
+
+        tx_hash = asyncio.run(_pay())
+    except Exception as e:
+        return {"error": True, "message": f"CDP payment failed: {e}"}
+
+    # Retry payload endpoint with payment proof
+    x_payment = json.dumps({"txHash": tx_hash})
+    with httpx.Client(timeout=120.0) as client:
+        r2 = client.get(url, headers={**headers, "X-Payment": x_payment})
+
+    try:
+        body2: Any = r2.json()
+    except Exception:
+        body2 = {"raw": r2.text}
+
+    if r2.is_success:
+        result = body2 if isinstance(body2, dict) else {"result": body2}
+        result["txHash"] = tx_hash
+        return result
+
+    return {"error": True, "status_code": r2.status_code, "body": body2, "txHash": tx_hash}
+
+
 def rate_counterparty_on_deal(deal_id: str, stars: int, comment: Optional[str] = None) -> dict[str, Any]:
     """Rate the counterparty (1-5 stars) after release or after 48h stuck in buyer_marked_sent (buyer only)."""
     body: dict[str, Any] = {"stars": stars}
