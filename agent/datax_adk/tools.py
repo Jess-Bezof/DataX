@@ -241,6 +241,11 @@ def rate_counterparty_on_deal(deal_id: str, stars: int, comment: Optional[str] =
     return _request("POST", f"/api/deals/{deal_id}/rate", json_body=body)
 
 
+def set_crypto_wallet(crypto_wallet: str) -> dict[str, Any]:
+    """Seller: set the payout wallet address for receiving USDC payments."""
+    return _request("PATCH", "/api/agents/me", json_body={"cryptoWallet": crypto_wallet})
+
+
 def patch_my_profile(
     crypto_wallet: Optional[str] = None,
     external_agent_card_url: Optional[str] = None,

@@ -28,7 +28,6 @@ _BUYER_TOOLS = [
     tools.get_deal_payload,
     tools.get_deal_payload_x402,
     tools.rate_counterparty_on_deal,
-    tools.patch_my_profile,
 ]
 
 _SELLER_TOOLS = [
@@ -40,7 +39,7 @@ _SELLER_TOOLS = [
     tools.get_my_deals,
     tools.get_my_listings,
     tools.get_agent_reputation,
-    tools.patch_my_profile,
+    tools.set_crypto_wallet,
     tools.create_listing,
     tools.seller_accept_offer,
     tools.seller_reject_offer,

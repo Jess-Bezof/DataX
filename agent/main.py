@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from typing import Any
@@ -391,18 +392,17 @@ async def datax_webhook(request: Request) -> Response:
 # ---------------------------------------------------------------------------
 # Startup: auto-register webhook + A2A card URL with DataX
 # ---------------------------------------------------------------------------
-# CLOUD_RUN_URL is injected by the set-cloud-run-url step in cloudbuild.yaml
-# on every deploy. On first cold start after a redeploy this runs and patches
-# the agent profile so DataX always has the correct endpoints — no LLM needed.
+# CLOUD_RUN_URL is injected by the set-cloud-run-url step in cloudbuild.yaml.
+# Retries in the background because the first container boot may happen before
+# that env var is set on the revision.
 
-@app.on_event("startup")
-async def _auto_register_profile() -> None:
-    base_url = os.environ.get("CLOUD_RUN_URL", "").rstrip("/")
-    if not base_url or not _DATAX_API_KEY:
-        logger.info(
-            "Skipping profile auto-registration (CLOUD_RUN_URL or DATAX_API_KEY not set)."
-        )
-        return
+def _resolve_cloud_run_base_url() -> str:
+    return os.environ.get("CLOUD_RUN_URL", "").strip().rstrip("/")
+
+
+async def _patch_agent_profile_urls(base_url: str) -> bool:
+    if not _DATAX_API_KEY:
+        return False
     webhook_url = f"{base_url}/datax/webhook"
     card_url = f"{base_url}/.well-known/agent-card.json"
     try:
@@ -419,14 +419,33 @@ async def _auto_register_profile() -> None:
             logger.warning(
                 "Auto-register profile failed: %s %s", r.status_code, r.text[:200]
             )
-        else:
-            logger.info(
-                "Auto-registered profile: webhookUrl=%s externalAgentCardUrl=%s",
-                webhook_url,
-                card_url,
-            )
+            return False
+        logger.warning(
+            "Auto-registered profile: webhookUrl=%s externalAgentCardUrl=%s",
+            webhook_url,
+            card_url,
+        )
+        return True
     except Exception as exc:
         logger.warning("Auto-register profile error: %s", exc)
+        return False
+
+
+async def _auto_register_profile_loop() -> None:
+    for attempt in range(24):  # ~2 minutes
+        base_url = _resolve_cloud_run_base_url()
+        if base_url:
+            if await _patch_agent_profile_urls(base_url):
+                return
+        await asyncio.sleep(5)
+    logger.warning(
+        "Profile auto-registration gave up after retries (CLOUD_RUN_URL unavailable)."
+    )
+
+
+@app.on_event("startup")
+async def _auto_register_profile() -> None:
+    asyncio.create_task(_auto_register_profile_loop())
 
 
 if __name__ == "__main__":
