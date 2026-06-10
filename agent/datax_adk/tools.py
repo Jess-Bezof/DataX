@@ -141,7 +141,7 @@ def get_deal_payload(deal_id: str) -> dict[str, Any]:
     return _request("GET", f"/api/deals/{deal_id}/payload")
 
 
-def get_deal_payload_x402(deal_id: str) -> dict[str, Any]:
+async def get_deal_payload_x402(deal_id: str) -> dict[str, Any]:
     """Fetch full dataset for a deal, paying automatically via X402 if required.
 
     If the deal is in awaiting_payment status, this tool:
@@ -152,12 +152,14 @@ def get_deal_payload_x402(deal_id: str) -> dict[str, Any]:
 
     Use this instead of get_deal_payload when the deal status is awaiting_payment.
     """
+    from cdp import CdpClient  # type: ignore
+
     url = f"{_base_url()}/api/deals/{deal_id}/payload"
     headers: dict[str, str] = {"Authorization": f"Bearer {_api_key()}"}
 
     # First attempt — may return 402
-    with httpx.Client(timeout=120.0) as client:
-        r = client.get(url, headers=headers)
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        r = await client.get(url, headers=headers)
 
     if r.status_code == 200:
         body = r.json()
@@ -191,39 +193,32 @@ def get_deal_payload_x402(deal_id: str) -> dict[str, Any]:
     except ValueError:
         return {"error": True, "message": f"Invalid maxAmountRequired: {amount_atomic_str}"}
 
-    # Submit on-chain USDC payment via CDP SDK
+    # Submit on-chain USDC payment via CDP SDK (async — no asyncio.run needed)
     try:
-        import asyncio
-        from cdp import CdpClient  # type: ignore
-
-        # USDC contract on Base Sepolia
         USDC_CONTRACT = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
         BUYER_WALLET_NAME = os.environ.get("CDP_WALLET_NAME", "datax-buyer")
 
-        async def _pay() -> str:
-            async with CdpClient(
-                api_key_id=os.environ["CDP_API_KEY_ID"],
-                api_key_secret=os.environ["CDP_API_KEY_SECRET"],
-                wallet_secret=os.environ["CDP_WALLET_SECRET"],
-            ) as cdp:
-                account = await cdp.evm.get_or_create_account(name=BUYER_WALLET_NAME)
-                transfer = await account.transfer(
-                    to=pay_to,
-                    amount=amount_usdc,
-                    token=USDC_CONTRACT,
-                    network="base-sepolia",
-                )
-                result = await transfer.wait()
-                return result.transaction_hash
-
-        tx_hash = asyncio.run(_pay())
+        async with CdpClient(
+            api_key_id=os.environ["CDP_API_KEY_ID"],
+            api_key_secret=os.environ["CDP_API_KEY_SECRET"],
+            wallet_secret=os.environ["CDP_WALLET_SECRET"],
+        ) as cdp:
+            account = await cdp.evm.get_or_create_account(name=BUYER_WALLET_NAME)
+            transfer = await account.transfer(
+                to=pay_to,
+                amount=amount_usdc,
+                token=USDC_CONTRACT,
+                network="base-sepolia",
+            )
+            tx_result = await transfer.wait()
+            tx_hash: str = tx_result.transaction_hash
     except Exception as e:
         return {"error": True, "message": f"CDP payment failed: {e}"}
 
     # Retry payload endpoint with payment proof
     x_payment = json.dumps({"txHash": tx_hash})
-    with httpx.Client(timeout=120.0) as client:
-        r2 = client.get(url, headers={**headers, "X-Payment": x_payment})
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        r2 = await client.get(url, headers={**headers, "X-Payment": x_payment})
 
     try:
         body2: Any = r2.json()
@@ -231,7 +226,7 @@ def get_deal_payload_x402(deal_id: str) -> dict[str, Any]:
         body2 = {"raw": r2.text}
 
     if r2.is_success:
-        result = body2 if isinstance(body2, dict) else {"result": body2}
+        result: dict[str, Any] = body2 if isinstance(body2, dict) else {"result": body2}
         result["txHash"] = tx_hash
         return result
 
