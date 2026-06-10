@@ -39,7 +39,7 @@ function getPublicClient() {
 /** Convert a USDC string amount (e.g. "50") to atomic units bigint */
 export function usdcToAtomic(amount: string): bigint {
   const n = parseFloat(amount);
-  if (isNaN(n) || n <= 0) return 0n;
+  if (isNaN(n) || n <= 0) return BigInt(0);
   return BigInt(Math.round(n * 10 ** USDC_DECIMALS));
 }
 
