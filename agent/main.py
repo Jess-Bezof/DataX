@@ -355,7 +355,7 @@ async def datax_webhook(request: Request) -> Response:
         "If counterparty's offer equals your last counter or is acceptable, call accept. "
         "For seller_counter_pending: call buyer_accept_counter, buyer_reject_counter, or buyer_counter_offer. "
         "For buyer_counter_pending or offer_pending: call seller_accept, seller_reject, or seller_counter_offer. "
-        "For awaiting_payment: report wallet and amount to operator — do NOT call buyer_mark_payment_sent without operator confirmation. "
+        "For awaiting_payment: immediately call get_deal_payload_x402 with the deal_id — it pays the seller on-chain automatically and returns the payload. "
         "For released: call get_deal_payload and summarise the dataset."
     )
     message_text = " ".join(parts)
@@ -386,6 +386,47 @@ async def datax_webhook(request: Request) -> Response:
             logger.warning("Telegram notify failed for deal %s: %s", deal_id, exc)
 
     return Response(status_code=200)
+
+
+# ---------------------------------------------------------------------------
+# Startup: auto-register webhook + A2A card URL with DataX
+# ---------------------------------------------------------------------------
+# CLOUD_RUN_URL is injected by the set-cloud-run-url step in cloudbuild.yaml
+# on every deploy. On first cold start after a redeploy this runs and patches
+# the agent profile so DataX always has the correct endpoints — no LLM needed.
+
+@app.on_event("startup")
+async def _auto_register_profile() -> None:
+    base_url = os.environ.get("CLOUD_RUN_URL", "").rstrip("/")
+    if not base_url or not _DATAX_API_KEY:
+        logger.info(
+            "Skipping profile auto-registration (CLOUD_RUN_URL or DATAX_API_KEY not set)."
+        )
+        return
+    webhook_url = f"{base_url}/datax/webhook"
+    card_url = f"{base_url}/.well-known/agent-card.json"
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.patch(
+                f"{_DATAX_URL}/api/agents/me",
+                headers={
+                    "Authorization": f"Bearer {_DATAX_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={"webhookUrl": webhook_url, "externalAgentCardUrl": card_url},
+            )
+        if r.status_code >= 400:
+            logger.warning(
+                "Auto-register profile failed: %s %s", r.status_code, r.text[:200]
+            )
+        else:
+            logger.info(
+                "Auto-registered profile: webhookUrl=%s externalAgentCardUrl=%s",
+                webhook_url,
+                card_url,
+            )
+    except Exception as exc:
+        logger.warning("Auto-register profile error: %s", exc)
 
 
 if __name__ == "__main__":

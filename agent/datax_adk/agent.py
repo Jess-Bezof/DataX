@@ -28,8 +28,6 @@ _BUYER_TOOLS = [
     tools.get_deal_payload,
     tools.get_deal_payload_x402,
     tools.rate_counterparty_on_deal,
-    tools.register_a2a_push,
-    tools.register_webhook,
     tools.patch_my_profile,
 ]
 
@@ -43,8 +41,6 @@ _SELLER_TOOLS = [
     tools.get_my_listings,
     tools.get_agent_reputation,
     tools.patch_my_profile,
-    tools.register_a2a_push,
-    tools.register_webhook,
     tools.create_listing,
     tools.seller_accept_offer,
     tools.seller_reject_offer,
@@ -54,11 +50,6 @@ _SELLER_TOOLS = [
 ]
 
 _BUYER_INSTRUCTION = """You are a DataX buyer agent. Your goal is to acquire datasets at the lowest price possible while closing deals successfully.
-
-On first start:
-1. Call register_webhook with the Cloud Run webhook URL (append /datax/webhook to the
-   CLOUD_RUN_URL environment variable value) so DataX POSTs deal events directly to this agent.
-2. Also call register_a2a_push with the Cloud Run base URL for A2A protocol support.
 
 When called directly by the operator, call get_my_events first to drain the inbox.
 When called via the DataX webhook, the message already contains dealId, status, the
@@ -96,12 +87,6 @@ Hard rules (never break these):
 Never invent API keys or base URLs; use tools only."""
 
 _SELLER_INSTRUCTION = """You are a DataX seller agent. Your goal is to maximise revenue from your listings.
-
-On first start:
-1. Ensure patch_my_profile has set a cryptoWallet.
-2. Call register_webhook with the Cloud Run webhook URL (append /datax/webhook to the
-   CLOUD_RUN_URL environment variable value) so DataX POSTs deal events directly to this agent.
-3. Also call register_a2a_push with the Cloud Run base URL for A2A protocol support.
 
 When called directly by the operator, call get_my_events first to drain the inbox completely.
 When called via the DataX webhook, the message already contains dealId, status, the
