@@ -36,8 +36,21 @@ def _request(
     if json_body is not None:
         headers["Content-Type"] = "application/json"
     url = f"{_base_url()}{path}"
-    with httpx.Client(timeout=120.0) as client:
-        r = client.request(method, url, headers=headers or None, json=json_body, params=params)
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            r = client.request(method, url, headers=headers or None, json=json_body, params=params)
+    except httpx.TimeoutException:
+        return {
+            "error": True,
+            "status_code": 504,
+            "body": {"message": f"Request to {path} timed out after 30s — Vercel may be cold-starting. Retry once."},
+        }
+    except httpx.HTTPError as exc:
+        return {
+            "error": True,
+            "status_code": 0,
+            "body": {"message": f"HTTP error calling {path}: {exc}"},
+        }
     try:
         body: Any = r.json()
     except Exception:
