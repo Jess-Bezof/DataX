@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from typing import Any, Optional
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 _DEFAULT_BASE = "https://data-xaidar.vercel.app"
 
@@ -226,6 +229,7 @@ async def get_deal_payload_x402(deal_id: str) -> dict[str, Any]:
             tx_result = await transfer.wait()
             tx_hash: str = tx_result.transaction_hash
     except Exception as e:
+        logger.error("CDP payment failed for deal %s: %s", deal_id, e, exc_info=True)
         return {"error": True, "message": f"CDP payment failed: {e}"}
 
     # Retry payload endpoint with payment proof
