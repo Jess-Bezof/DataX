@@ -11,9 +11,8 @@
 #
 # Recommended: run ./setup.sh once (enables APIs + IAM), then it invokes this file.
 #
-# Cloud Run is deployed without --allow-unauthenticated. Callers must send an identity
-# token (see docs/DEPLOY-CLOUD-RUN.md). Grant roles/run.invoker to users or SAs that
-# should invoke the service.
+# Cloud Run is deployed with --allow-unauthenticated so Telegram and DataX webhooks
+# can reach the agent without identity tokens.
 #
 # Manual prerequisites (if not using setup.sh):
 #   gcloud services enable run.googleapis.com cloudbuild.googleapis.com \
@@ -90,23 +89,11 @@ steps:
       - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPO/$_SERVICE_NAME:$BUILD_ID
       - --region=$_REGION
       - --platform=managed
-      - --no-allow-unauthenticated
+      - --allow-unauthenticated
       - --min-instances=1
       - --max-instances=1
       - --set-env-vars=^@^GOOGLE_CLOUD_PROJECT=$PROJECT_ID@GOOGLE_CLOUD_LOCATION=$_REGION@GOOGLE_GENAI_USE_VERTEXAI=false@DATAX_URL=$_DATAX_URL@AGENT_ROLE=$_AGENT_ROLE@DATAX_ADK_MODEL=$_DATAX_ADK_MODEL@ADK_SERVE_WEB=false@ADK_ENABLE_A2A=true
       - --set-secrets=DATAX_API_KEY=$_DATAX_SECRET_ID:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,TELEGRAM_BOT_TOKEN=$_TELEGRAM_SECRET_ID:latest,CDP_API_KEY_ID=CDP_API_KEY_ID:latest,CDP_API_KEY_SECRET=CDP_API_KEY_SECRET:latest,CDP_WALLET_SECRET=CDP_WALLET_SECRET:latest
-
-  - id: allow-unauthenticated
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
-    entrypoint: gcloud
-    args:
-      - run
-      - services
-      - add-iam-policy-binding
-      - $_SERVICE_NAME
-      - --region=$_REGION
-      - --member=allUsers
-      - --role=roles/run.invoker
 
   - id: set-cloud-run-url
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
