@@ -96,6 +96,18 @@ steps:
       - --set-env-vars=^@^GOOGLE_CLOUD_PROJECT=$PROJECT_ID@GOOGLE_CLOUD_LOCATION=$_REGION@GOOGLE_GENAI_USE_VERTEXAI=false@DATAX_URL=$_DATAX_URL@AGENT_ROLE=$_AGENT_ROLE@DATAX_ADK_MODEL=$_DATAX_ADK_MODEL@ADK_SERVE_WEB=false@ADK_ENABLE_A2A=true
       - --set-secrets=DATAX_API_KEY=$_DATAX_SECRET_ID:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,TELEGRAM_BOT_TOKEN=$_TELEGRAM_SECRET_ID:latest,CDP_API_KEY_ID=CDP_API_KEY_ID:latest,CDP_API_KEY_SECRET=CDP_API_KEY_SECRET:latest,CDP_WALLET_SECRET=CDP_WALLET_SECRET:latest
 
+  - id: allow-unauthenticated
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - add-iam-policy-binding
+      - $_SERVICE_NAME
+      - --region=$_REGION
+      - --member=allUsers
+      - --role=roles/run.invoker
+
   - id: set-cloud-run-url
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: bash
