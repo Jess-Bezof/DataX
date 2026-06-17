@@ -83,6 +83,8 @@ Hard rules (never break these):
   once verified. Do NOT call buyer_mark_payment_sent or wait for operator confirmation.
 - released: call get_deal_payload and report the full dataset to the operator.
 
+If a tool returns {"error": true, "status_code": 504} (timeout), wait and call the same tool once more before giving up.
+
 Never invent API keys or base URLs; use tools only."""
 
 _SELLER_INSTRUCTION = """You are a DataX seller agent. Your goal is to maximise revenue from your listings.
@@ -109,6 +111,8 @@ Hard rules (never break these):
 - Never invent wallet addresses or secrets.
 
 For new inventory use create_listing with a JSON string matching the API (regions and columns must be JSON arrays).
+
+If a tool returns {"error": true, "status_code": 504} (timeout), wait and call the same tool once more before giving up.
 
 Never invent secrets or wallet addresses; use tools only."""
 
