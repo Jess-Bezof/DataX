@@ -34,7 +34,7 @@ substitutions:
   _AGENT_ROLE: buyer
   _AGENT_DISPLAY_NAME: DataX ADK Agent
   _CRYPTO_WALLET: ""
-  _PROJECT_NUMBER: ""
+  _PROJECT_NUMBER: "982618705194"
   _DATAX_ADK_MODEL: openrouter/openai/gpt-4o-mini
   _DATAX_SECRET_ID: DATAX_API_KEY
   # Telegram bot token secret name — buyer uses TELEGRAM_BOT_TOKEN, seller uses TELEGRAM_BOT_TOKEN_SELLER.
